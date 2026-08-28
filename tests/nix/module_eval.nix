@@ -37,6 +37,7 @@ assert cfg.services.postfix.settings.main.default_transport ==
 assert cfg.services.postfix.settings.main.mailbox_transport ==
 	"lmtp:unix:private/dovecot-lmtp";
 assert cfg.services.dovecot2.enable;
+assert lib.versionAtLeast cfg.services.dovecot2.package.version "2.4";
 assert cfg.services.dovecot2.settings.mail_driver == "maildir";
 assert cfg.services.dovecot2.settings.mail_path == mail.mailDirectory;
 assert cfg.services.dovecot2.settings.auth_username_format == "%{user | username}";

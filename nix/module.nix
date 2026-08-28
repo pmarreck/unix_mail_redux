@@ -209,6 +209,7 @@ in
 		services.dovecot2 = {
 			enable = true;
 			enablePAM = false;
+			package = pkgs.dovecot_2_4;
 			settings = {
 				dovecot_config_version = config.services.dovecot2.package.version;
 				dovecot_storage_version = config.services.dovecot2.package.version;
