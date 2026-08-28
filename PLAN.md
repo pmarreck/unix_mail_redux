@@ -46,6 +46,18 @@
         service-only activation must not require a reboot.
 - [ ] Verify `post`, GNU mail notification, and Mail.app over Tailscale; write
       the operator guide; commit and push only from a passing state.
+- [ ] Accept the configured human local-part through explicit `--as`.
+- [ ] Add explicit `user:`, `project:`, `tmux:`, `claude:`, `codex:`, and
+      `grok:` recipient namespaces; permit generic `agent:` only when its
+      registry lookup is unique, retain an unqualified name as shorthand for
+      the common `project:` case, and preserve the namespace in durable
+      mailbox storage.
+      - Canonical human address: `user:pmarreck`, matching the authenticated
+        account. Optional `user:peter` is an explicit alias to the same inbox.
+      - Curiosity poke: persona names can collide across harnesses, so an
+        ambiguous generic `agent:` lookup must fail instead of broadcasting.
+      - Curiosity poke: `tmux:` delivery must keep working after the pane uses
+        `cd`, while `project:` delivery must follow the unique project pane.
 - [ ] Put the installed `post` CLI on Peter's PATH and document the optional
       one-letter `m` alias without making the repository name part of normal
       use.

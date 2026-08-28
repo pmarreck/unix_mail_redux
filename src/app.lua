@@ -11,7 +11,9 @@ end
 local function resolve_identity(parsed, context)
 	if parsed.identity then
 		local normalized = identity.normalize(parsed.identity)
-		identity.mailbox(normalized)
+		if normalized ~= identity.normalize(context.human_local_part or "peter") then
+			identity.mailbox(normalized)
+		end
 		return normalized
 	end
 	if context.git_root then
@@ -37,7 +39,8 @@ function M.plan(parsed, context)
 	end
 
 	local resolved = resolve_identity(parsed, context)
-	local mailbox = resolved == "peter" and "INBOX" or identity.mailbox(resolved)
+	local human = identity.normalize(context.human_local_part or "peter")
+	local mailbox = resolved == human and "INBOX" or identity.mailbox(resolved)
 	local argv
 	if parsed.verb == "list" then
 		argv = transport.list(context.config, mailbox, parsed.format)

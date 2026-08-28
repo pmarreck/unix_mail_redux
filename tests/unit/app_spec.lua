@@ -46,6 +46,19 @@ describe("post application planning", function()
 		assert.are.equal("INBOX", plan.mailbox)
 	end)
 
+	it("accepts Peter's configured identity explicitly", function()
+		local plan = app.plan({
+			verb = "list",
+			identity = "Peter",
+			format = "human",
+		}, {
+			config = config,
+			human_local_part = "peter",
+		})
+		assert.are.equal("peter", plan.identity)
+		assert.are.equal("INBOX", plan.mailbox)
+	end)
+
 	it("does not require a project for fleet status", function()
 		local plan = app.plan({ verb = "status", format = "json" }, {
 			config = config,
