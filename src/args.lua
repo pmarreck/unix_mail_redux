@@ -41,6 +41,9 @@ function M.parse(argv)
 		elseif value == "--subject" then
 			result.subject = require_value(argv, index, value, "a value")
 			index = index + 1
+		elseif value == "--body" then
+			result.body = require_value(argv, index, value, "a value")
+			index = index + 1
 		elseif value == "-h" or value == "--help" then
 			result.verb = "help"
 		elseif value == "--about" then
@@ -78,4 +81,3 @@ function M.parse(argv)
 end
 
 return M
-

@@ -13,6 +13,9 @@ annotate=[
 	src/wake.lua = Pure conservative agent wake-decision state machine
 	tests = Unit and CLI contract tests
 	tests/fixtures/fake_himalaya = Deterministic Himalaya stand-in used by CLI integration tests
+	tests/fixtures/process_echo = Deterministic stdin echo fixture for process adapter tests
+	tests/fixtures/process_large_output = Pipe-buffer-sized output fixture guarding against capture truncation
+	tests/integration/process_spec.lua = Integration coverage for stdin streaming and complete asynchronous pipe drainage
 	tests/nix/module_eval.nix = Pure NixOS module policy and wiring assertions
 	tests/unit/app_spec.lua = Unit coverage for post command planning and repository context inference
 ]

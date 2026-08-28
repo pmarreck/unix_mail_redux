@@ -28,8 +28,13 @@ describe("post argument parsing", function()
 			verb = "to",
 			recipient = "validate",
 			subject = "Pin validate Release",
+			body = "Please pin the known-good commit.",
 			format = "human",
-		}, args.parse({ "to", "validate", "--subject", "Pin validate Release" }))
+		}, args.parse({
+			"to", "validate",
+			"--subject", "Pin validate Release",
+			"--body", "Please pin the known-good commit.",
+		}))
 	end)
 
 	it("recognizes help and about", function()
@@ -41,6 +46,6 @@ describe("post argument parsing", function()
 		assert.has_error(function() args.parse({ "--wat" }) end, "unknown option: --wat")
 		assert.has_error(function() args.parse({ "read" }) end, "read requires a message ID")
 		assert.has_error(function() args.parse({ "--as" }) end, "--as requires a project identity")
+		assert.has_error(function() args.parse({ "--body" }) end, "--body requires a value")
 	end)
 end)
-

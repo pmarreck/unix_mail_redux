@@ -22,6 +22,13 @@ local function resolve_identity(parsed, context)
 	return "peter"
 end
 
+local function address(name, context)
+	if name == context.human_local_part then
+		return name .. "@" .. context.domain
+	end
+	return identity.address(name, context.domain)
+end
+
 function M.plan(parsed, context)
 	if parsed.verb == "status" then
 		return {
@@ -36,6 +43,26 @@ function M.plan(parsed, context)
 		argv = transport.list(context.config, mailbox, parsed.format)
 	elseif parsed.verb == "read" then
 		argv = transport.read(context.config, mailbox, parsed.id, parsed.format)
+	elseif parsed.verb == "to" then
+		if not parsed.subject or parsed.subject == "" then
+			error("message subject is required", 0)
+		end
+		if not parsed.body or parsed.body == "" then
+			error("message body is required", 0)
+		end
+		if parsed.confirm ~= false then
+			error("sending requires --yes until interactive review is implemented", 0)
+		end
+		local recipient = identity.normalize(parsed.recipient)
+		local from = address(resolved, context)
+		local to = address(recipient, context)
+		return {
+			identity = resolved,
+			from = from,
+			to = to,
+			stdin = parsed.body,
+			argv = transport.compose(context.config, from, to, parsed.subject, parsed.format),
+		}
 	else
 		error(parsed.verb .. " is not implemented yet", 0)
 	end

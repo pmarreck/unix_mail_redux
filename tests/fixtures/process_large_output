@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -u
+
+chunk=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+for (( index = 0; index < 2048; index++ )); do
+	printf '%s' "$chunk"
+done

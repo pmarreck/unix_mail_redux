@@ -59,4 +59,45 @@ describe("post application planning", function()
 			})
 		end, "invalid project identity: ../escape")
 	end)
+
+	it("plans a project-to-project message with its body on stdin", function()
+		local plan = app.plan({
+			verb = "to",
+			recipient = "validate",
+			subject = "Bound the scanner",
+			body = "Please reproduce this under a cgroup ceiling.\n",
+			format = "human",
+			confirm = false,
+		}, {
+			config = config,
+			git_root = "/home/peter/Code/unix_mail_redux",
+			domain = "agents.home.arpa",
+			human_local_part = "peter",
+		})
+
+		assert.are.equal("unix_mail_redux", plan.identity)
+		assert.are.equal("unix_mail_redux@agents.home.arpa", plan.from)
+		assert.are.equal("validate@agents.home.arpa", plan.to)
+		assert.are.equal("Please reproduce this under a cgroup ceiling.\n", plan.stdin)
+		assert.same({
+			"himalaya", "--config", "/etc/unix-mail-redux/himalaya.toml",
+			"--account", "unix_mail_redux",
+			"message", "compose",
+			"--from", "unix_mail_redux@agents.home.arpa",
+			"--to", "validate@agents.home.arpa",
+			"--subject", "Bound the scanner",
+			"--save", "Sent", "--send",
+		}, plan.argv)
+	end)
+
+	it("rejects an incomplete message before transport", function()
+		assert.has_error(function()
+			app.plan({ verb = "to", recipient = "validate", format = "human" }, {
+				config = config,
+				git_root = "/home/peter/Code/unix_mail_redux",
+				domain = "agents.home.arpa",
+				human_local_part = "peter",
+			})
+		end, "message subject is required")
+	end)
 end)

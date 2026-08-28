@@ -38,4 +38,23 @@ describe("Himalaya command construction", function()
 			"mailbox", "list",
 		}, transport.status(config, "json"))
 	end)
+
+	it("builds a send command without exposing the body in argv", function()
+		assert.same({
+			"/run/current-system/sw/bin/himalaya",
+			"--config", "/home/test/.config/post/himalaya.toml",
+			"--account", "unix_mail_redux",
+			"message", "compose",
+			"--from", "einstein@agents.home.arpa",
+			"--to", "validate@agents.home.arpa",
+			"--subject", "Bound the scanner",
+			"--save", "Sent",
+			"--send",
+		}, transport.compose(
+			config,
+			"einstein@agents.home.arpa",
+			"validate@agents.home.arpa",
+			"Bound the scanner"
+		))
+	end)
 end)

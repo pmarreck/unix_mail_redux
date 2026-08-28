@@ -3,3 +3,11 @@
 set -u
 
 printf '%s\n' "$@"
+
+for argument in "$@"; do
+	if [[ $argument == compose ]]; then
+		printf '%s\n' --BODY--
+		command cat
+		break
+	fi
+done

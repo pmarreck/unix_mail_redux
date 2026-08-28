@@ -45,6 +45,13 @@ expect "JSON fleet status" 0 "$expected_status_args" "" \
 	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
 	"$project_root/bin/post" status --json
 
+expected_send=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\nmessage\ncompose\n--from\nunix_mail_redux@agents.home.arpa\n--to\nvalidate@agents.home.arpa\n--subject\nBound the scanner\n--save\nSent\n--send\n--BODY--\nPlease reproduce this under a cgroup ceiling.'
+expect "confirmed project message" 0 "$expected_send" "" \
+	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" to validate --as unix_mail_redux \
+	--subject "Bound the scanner" \
+	--body $'Please reproduce this under a cgroup ceiling.\n' --yes
+
 if (( failures > 0 )); then
 	exit "$failures"
 fi

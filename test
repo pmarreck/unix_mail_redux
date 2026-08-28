@@ -20,6 +20,7 @@ cd "$project_root" || exit 1
 export LUA_PATH="$project_root/src/?.lua;$project_root/src/?/init.lua;;"
 
 run_suite unit busted --output=utfTerminal tests/unit
+run_suite integration busted --output=utfTerminal tests/integration
 run_suite cli tests/cli/post_test
 
 if (( failures > 0 )); then
@@ -28,4 +29,3 @@ if (( failures > 0 )); then
 fi
 
 printf 'PASS all suites\n'
-

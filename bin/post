@@ -50,14 +50,23 @@ local config = {
 	account = os.getenv("POST_ACCOUNT") or "unix_mail_redux",
 }
 
+if parsed.verb == "to" and not parsed.body then
+	local handle_type = require("luv").guess_handle(0)
+	if handle_type ~= "tty" then
+		parsed.body = io.stdin:read("*a")
+	end
+end
+
 local planned_ok, plan = pcall(app.plan, parsed, {
 	config = config,
 	git_root = git_root,
+	domain = os.getenv("POST_DOMAIN") or "agents.home.arpa",
+	human_local_part = os.getenv("POST_HUMAN_LOCAL_PART") or "peter",
 })
 if not planned_ok then
 	io.stderr:write("post: ", tostring(plan), "\n")
 	os.exit(2)
 end
 
-local result = process.run(plan.argv)
+local result = process.run(plan.argv, { stdin = plan.stdin })
 os.exit(result.rc)

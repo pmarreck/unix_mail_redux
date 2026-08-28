@@ -39,4 +39,15 @@ function M.status(config, format)
 	return append(base(config, format), { "mailbox", "list" })
 end
 
+function M.compose(config, from, to, subject, format)
+	return append(base(config, format), {
+		"message", "compose",
+		"--from", from,
+		"--to", to,
+		"--subject", subject,
+		"--save", "Sent",
+		"--send",
+	})
+end
+
 return M
