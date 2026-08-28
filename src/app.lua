@@ -47,11 +47,11 @@ function M.plan(parsed, context)
 		if not parsed.subject or parsed.subject == "" then
 			error("message subject is required", 0)
 		end
+		if parsed.subject:find("[\r\n]") then
+			error("message subject must be one line", 0)
+		end
 		if not parsed.body or parsed.body == "" then
 			error("message body is required", 0)
-		end
-		if parsed.confirm ~= false then
-			error("sending requires --yes until interactive review is implemented", 0)
 		end
 		local recipient = identity.normalize(parsed.recipient)
 		local from = address(resolved, context)
@@ -60,6 +60,8 @@ function M.plan(parsed, context)
 			identity = resolved,
 			from = from,
 			to = to,
+			subject = parsed.subject,
+			body = parsed.body,
 			stdin = parsed.body,
 			argv = transport.compose(context.config, from, to, parsed.subject, parsed.format),
 		}

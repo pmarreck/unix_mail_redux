@@ -22,6 +22,12 @@ expect() {
 	fi
 }
 
+with_input() {
+	local input=$1
+	shift
+	printf '%s' "$input" | "$@"
+}
+
 expect "help" 0 \
 	"usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch]" \
 	"" \
@@ -51,6 +57,19 @@ expect "confirmed project message" 0 "$expected_send" "" \
 	"$project_root/bin/post" to validate --as unix_mail_redux \
 	--subject "Bound the scanner" \
 	--body $'Please reproduce this under a cgroup ceiling.\n' --yes
+
+expected_review=$'From: unix_mail_redux@agents.home.arpa\nTo: validate@agents.home.arpa\nSubject: Bound the scanner\n\nPlease reproduce this under a cgroup ceiling.\n\nSend? [y/N] '
+expect "review and accept project message" 0 "$expected_send" "$expected_review" \
+	with_input yes env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" to validate --as unix_mail_redux \
+	--subject "Bound the scanner" \
+	--body $'Please reproduce this under a cgroup ceiling.\n'
+
+expect "review and reject project message" 0 "" "${expected_review}Not sent." \
+	with_input no env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" to validate --as unix_mail_redux \
+	--subject "Bound the scanner" \
+	--body $'Please reproduce this under a cgroup ceiling.\n'
 
 if (( failures > 0 )); then
 	exit "$failures"

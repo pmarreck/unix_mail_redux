@@ -9,6 +9,7 @@ annotate=[
 	src/args.lua = Pure order-independent parser for the post CLI
 	src/identity.lua = Pure project identity validation, collision classification, and mail address/folder derivation
 	src/process.lua = Shell-free luv process adapter for invoking the Himalaya transport
+	src/review.lua = Pure message-preview renderer and conservative confirmation classifier
 	src/transport.lua = Shell-free Himalaya argv construction
 	src/wake.lua = Pure conservative agent wake-decision state machine
 	tests = Unit and CLI contract tests
@@ -18,4 +19,5 @@ annotate=[
 	tests/integration/process_spec.lua = Integration coverage for stdin streaming and complete asynchronous pipe drainage
 	tests/nix/module_eval.nix = Pure NixOS module policy and wiring assertions
 	tests/unit/app_spec.lua = Unit coverage for post command planning and repository context inference
+	tests/unit/review_spec.lua = Exact preview rendering and set-based confirmation behavior
 ]

@@ -79,6 +79,8 @@ describe("post application planning", function()
 		assert.are.equal("unix_mail_redux@agents.home.arpa", plan.from)
 		assert.are.equal("validate@agents.home.arpa", plan.to)
 		assert.are.equal("Please reproduce this under a cgroup ceiling.\n", plan.stdin)
+		assert.are.equal("Bound the scanner", plan.subject)
+		assert.are.equal("Please reproduce this under a cgroup ceiling.\n", plan.body)
 		assert.same({
 			"himalaya", "--config", "/etc/unix-mail-redux/himalaya.toml",
 			"--account", "unix_mail_redux",
@@ -88,6 +90,24 @@ describe("post application planning", function()
 			"--subject", "Bound the scanner",
 			"--save", "Sent", "--send",
 		}, plan.argv)
+	end)
+
+	it("rejects header injection in a message subject", function()
+		assert.has_error(function()
+			app.plan({
+				verb = "to",
+				recipient = "validate",
+				subject = "Hello\nBcc: outside@example.com",
+				body = "Nope",
+				format = "human",
+				confirm = false,
+			}, {
+				config = config,
+				git_root = "/home/peter/Code/unix_mail_redux",
+				domain = "agents.home.arpa",
+				human_local_part = "peter",
+			})
+		end, "message subject must be one line")
 	end)
 
 	it("rejects an incomplete message before transport", function()
