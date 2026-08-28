@@ -35,9 +35,18 @@ expect "about" 0 \
 expect "unknown option" 2 "" "post: unknown option: --wat" \
 	"$project_root/bin/post" --wat
 
+expected_list_args=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\n--json\nenvelope\nlist\n--mailbox\nAgents/validate'
+expect "JSON project inbox" 0 "$expected_list_args" "" \
+	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" --json --as validate
+
+expected_status_args=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\n--json\nmailbox\nlist'
+expect "JSON fleet status" 0 "$expected_status_args" "" \
+	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" status --json
+
 if (( failures > 0 )); then
 	exit "$failures"
 fi
 
 printf 'PASS post CLI\n'
-

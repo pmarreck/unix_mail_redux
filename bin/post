@@ -5,6 +5,8 @@ local script_directory = executable:match("^(.*)/[^/]+$") or "."
 package.path = script_directory .. "/../src/?.lua;" .. package.path
 
 local args = require("args")
+local app = require("app")
+local process = require("process")
 
 local argv = {}
 for index = 1, #arg do
@@ -32,6 +34,30 @@ if parsed.verb == "about" then
 	os.exit(0)
 end
 
-io.stderr:write("post: mail account is not configured yet\n")
-os.exit(1)
+local git_root
+if not parsed.identity and parsed.verb ~= "status" then
+	local git_result = process.run({
+		"git", "-C", os.getenv("PWD") or ".", "rev-parse", "--show-toplevel",
+	}, { capture = true })
+	if git_result.rc == 0 then
+		git_root = git_result.stdout:gsub("%s+$", "")
+	end
+end
 
+local config = {
+	executable = os.getenv("POST_HIMALAYA") or "himalaya",
+	config = os.getenv("POST_HIMALAYA_CONFIG") or "/etc/unix-mail-redux/himalaya.toml",
+	account = os.getenv("POST_ACCOUNT") or "unix_mail_redux",
+}
+
+local planned_ok, plan = pcall(app.plan, parsed, {
+	config = config,
+	git_root = git_root,
+})
+if not planned_ok then
+	io.stderr:write("post: ", tostring(plan), "\n")
+	os.exit(2)
+end
+
+local result = process.run(plan.argv)
+os.exit(result.rc)

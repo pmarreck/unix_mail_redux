@@ -35,5 +35,8 @@ function M.read(config, mailbox, id, format)
 	})
 end
 
-return M
+function M.status(config, format)
+	return append(base(config, format), { "mailbox", "list" })
+end
 
+return M

@@ -6,14 +6,25 @@
 	outputs = { self, nixpkgs }:
 		let
 			systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+			platformLabels = {
+				"x86_64-linux" = "linux x86_64";
+				"aarch64-linux" = "linux aarch64";
+				"aarch64-darwin" = "macos aarch64";
+			};
 			forAllSystems = nixpkgs.lib.genAttrs systems;
 			pkgsFor = system: import nixpkgs { inherit system; };
+			postFor = system: (pkgsFor system).callPackage ./nix/package.nix { };
 			luaFor = pkgs: pkgs.luajit.withPackages (lua: [
 				lua.busted
 				lua.lua-cjson
+				lua.luv
 			]);
 		in {
 			nixosModules.default = import ./nix/module.nix;
+			packages = forAllSystems (system: {
+				default = postFor system;
+				post = postFor system;
+			});
 
 			devShells = forAllSystems (system:
 				let
@@ -30,7 +41,17 @@
 			checks = forAllSystems (system:
 				let
 					pkgs = pkgsFor system;
-				in nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+				in {
+					post-cli = pkgs.runCommand "post-cli-smoke" {
+						nativeBuildInputs = [ (postFor system) ];
+					} ''
+						test "$(post --simple --about)" = \
+							"post 0.1.0: project-aware Unix mail for humans and agents (${platformLabels.${system}})"
+						post --simple --help | ${pkgs.gnugrep}/bin/grep -Fqx \
+							'usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch]'
+						touch "$out"
+					'';
+				} // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
 					module-eval = import ./tests/nix/module_eval.nix {
 						inherit pkgs;
 						lib = nixpkgs.lib;

@@ -28,5 +28,14 @@ describe("Himalaya command construction", function()
 			"--seen",
 		}, transport.read(config, "Agents/validate", "42", "human"))
 	end)
-end)
 
+	it("builds fleet status argv", function()
+		assert.same({
+			"/run/current-system/sw/bin/himalaya",
+			"--config", "/home/test/.config/post/himalaya.toml",
+			"--account", "unix_mail_redux",
+			"--json",
+			"mailbox", "list",
+		}, transport.status(config, "json"))
+	end)
+end)
