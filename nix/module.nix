@@ -378,6 +378,7 @@ in
 			];
 			environment = {
 				HOME = ownerHome;
+				POST_TMUX = lib.getExe pkgs.tmux;
 				POST_WAKE_PROJECTS = lib.concatStringsSep "," cfg.wakeProjects;
 				POST_WATCH_INTERVAL_SECONDS = toString cfg.watchIntervalSeconds;
 				POST_WAKE_COOLDOWN_SECONDS = toString cfg.wakeCooldownSeconds;

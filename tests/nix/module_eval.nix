@@ -50,6 +50,7 @@ assert cfg.systemd.services ? unix-mail-redux-credentials;
 assert cfg.systemd.services ? unix-mail-redux-tls;
 assert cfg.systemd.services ? unix-mail-redux-watch;
 assert cfg.systemd.services.unix-mail-redux-watch.serviceConfig.User == "operator";
+assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_TMUX == lib.getExe pkgs.tmux;
 assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_WAKE_PROJECTS == "*";
 assert cfg.systemd.timers ? unix-mail-redux-tls;
 assert lib.hasInfix "peter@agents\\.home\\.arpa" cfg.services.postfix.virtual;
