@@ -13,6 +13,8 @@
 				lua.lua-cjson
 			]);
 		in {
+			nixosModules.default = import ./nix/module.nix;
+
 			devShells = forAllSystems (system:
 				let
 					pkgs = pkgsFor system;
@@ -24,6 +26,16 @@
 						];
 					};
 				});
+
+			checks = forAllSystems (system:
+				let
+					pkgs = pkgsFor system;
+				in nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+					module-eval = import ./tests/nix/module_eval.nix {
+						inherit pkgs;
+						lib = nixpkgs.lib;
+						module = self.nixosModules.default;
+					};
+				});
 		};
 }
-

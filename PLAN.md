@@ -1,9 +1,12 @@
 # UNIX MAIL REDUX plan
 
-- [ ] Define the project identity, address, mailbox, CLI, and wake-state
+- [x] Define the project identity, address, mailbox, CLI, and wake-state
       contracts as failing unit and CLI tests.
       - Curiosity poke: normalized project names can collide even when their
         directory names differ by case.
+      Completed 2026-08-27 20:56 EDT: 14 pure LuaJIT tests and three Bash CLI
+      checks now cover set-based identity classification, option precedence,
+      shell-free transport argv, and conservative wake decisions.
 - [ ] Implement the `post` CLI as a thin LuaJIT adapter over Himalaya 2.
       - Curiosity poke: message IDs are mailbox-scoped, so every command must
         carry an explicit or mechanically inferred mailbox.
@@ -24,4 +27,3 @@
       it, then request Peter's approval before activation.
 - [ ] Verify `post`, GNU mail notification, and Mail.app over Tailscale; write
       the operator guide; commit and push only from a passing state.
-
