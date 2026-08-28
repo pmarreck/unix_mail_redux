@@ -89,6 +89,41 @@ expect "review and reject threaded reply" 0 "" "${expected_reply_review}Not sent
 	"$project_root/bin/post" reply 42 --as validate \
 	--body $'The bounded test now passes.\n'
 
+watch_sandbox="$(mktemp -d "${TMPDIR:-/tmp}/post-watch-cli.XXXXXX")"
+trap 'rm -rf -- "$watch_sandbox"' EXIT
+mkdir -p "$watch_sandbox/mail/.Agents.validate/new"
+touch "$watch_sandbox/mail/.Agents.validate/new/mail-1"
+: > "$watch_sandbox/tmux.calls"
+expect "one-shot delivery watcher" 0 "" \
+	"post: 1 unread mail message for validate" \
+	env POST_TMUX="$project_root/tests/fixtures/fake_tmux" \
+	POST_TMUX_CALLS="$watch_sandbox/tmux.calls" \
+	POST_WAKE_PROJECTS=validate \
+	"$project_root/bin/post" watch --once \
+	--maildir "$watch_sandbox/mail" \
+	--state-file "$watch_sandbox/state/watch.json"
+watch_calls="$(cat "$watch_sandbox/tmux.calls")"
+if [[ $watch_calls != *'display-message|-t|validate|--|📬 1 unread mail message for validate|'* ]]; then
+	printf 'FAIL watcher omitted the side-band notice\n' >&2
+	failures=$((failures + 1))
+fi
+if [[ $watch_calls != *'send-keys|-t|%1|-l|📬 You have 1 unread mail message for validate.'* ]]; then
+	printf 'FAIL watcher omitted the fixed-content wake\n' >&2
+	failures=$((failures + 1))
+fi
+calls_before="$(wc -l < "$watch_sandbox/tmux.calls")"
+expect "watcher deduplicates a persisted delivery" 0 "" "" \
+	env POST_TMUX="$project_root/tests/fixtures/fake_tmux" \
+	POST_TMUX_CALLS="$watch_sandbox/tmux.calls" \
+	POST_WAKE_PROJECTS=validate \
+	"$project_root/bin/post" watch --once \
+	--maildir "$watch_sandbox/mail" \
+	--state-file "$watch_sandbox/state/watch.json"
+if [[ $(wc -l < "$watch_sandbox/tmux.calls") != "$calls_before" ]]; then
+	printf 'FAIL duplicate delivery reached tmux\n' >&2
+	failures=$((failures + 1))
+fi
+
 if (( failures > 0 )); then
 	exit "$failures"
 fi

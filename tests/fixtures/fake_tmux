@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -u
+
+case "${1:-}" in
+	list-panes)
+		printf 'validate\t%%1\tclaude\t/home/test/Code/validate\t0\n'
+		;;
+	display-message)
+		if [[ ${2:-} == -p ]]; then
+			printf '2\n'
+		else
+			printf '%s\n' "$(printf '%s|' "$@")" >> "$POST_TMUX_CALLS"
+		fi
+		;;
+	capture-pane)
+		printf 'header\nwork\n❯ \nstatus\n'
+		;;
+	send-keys)
+		printf '%s\n' "$(printf '%s|' "$@")" >> "$POST_TMUX_CALLS"
+		;;
+	*)
+		printf 'unexpected fake tmux command: %s\n' "${1:-}" >&2
+		exit 2
+		;;
+esac

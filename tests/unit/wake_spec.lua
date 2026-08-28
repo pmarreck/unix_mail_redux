@@ -1,6 +1,51 @@
 local wake = require("wake")
 
 describe("wake policy", function()
+	it("recognizes empty prompts for the supported agent TUIs", function()
+		local cases = {
+			{ command = "claude", cursor_line = "❯   ", screen = "" },
+			{ command = "codex", cursor_line = "› Ask Codex to do anything", screen = "" },
+			{ command = "grok", cursor_line = " │ ❯                                      │ ", screen = "" },
+		}
+
+		for _, case in ipairs(cases) do
+			assert.are.equal("empty_prompt", wake.classify_pane(case), case.command)
+		end
+	end)
+
+	it("classifies drafts and dialogs conservatively", function()
+		local cases = {
+			{
+				command = "claude",
+				cursor_line = "❯ I am still typing",
+				screen = "",
+				expected = "busy",
+			},
+			{
+				command = "codex",
+				cursor_line = "› Fix the parser",
+				screen = "",
+				expected = "busy",
+			},
+			{
+				command = "claude",
+				cursor_line = "❯ ",
+				screen = "Do you trust this folder? (y/n)",
+				expected = "dialog",
+			},
+			{
+				command = "bash",
+				cursor_line = "$ ",
+				screen = "",
+				expected = "absent",
+			},
+		}
+
+		for _, case in ipairs(cases) do
+			assert.are.equal(case.expected, wake.classify_pane(case), case.command)
+		end
+	end)
+
 	it("classifies terminal states as a set", function()
 		local cases = {
 			{ state = "absent", action = "defer" },
@@ -61,4 +106,3 @@ describe("wake policy", function()
 		assert.are.equal("defer", cooling.action)
 	end)
 end)
-

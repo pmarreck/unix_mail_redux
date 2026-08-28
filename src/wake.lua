@@ -8,6 +8,46 @@ local state_actions = {
 	empty_prompt = "wake",
 }
 
+local agent_commands = {
+	claude = true,
+	codex = true,
+	grok = true,
+}
+
+local function trim(value)
+	return (value:gsub("^[%s\194\160]+", ""):gsub("[%s\194\160]+$", ""))
+end
+
+function M.classify_pane(input)
+	if not agent_commands[input.command] then
+		return "absent"
+	end
+
+	local screen = string.lower(input.screen or "")
+	if screen:find("do you trust", 1, true) then
+		return "dialog"
+	end
+	if screen:find("server exited unexpectedly", 1, true)
+		or screen:find("process exited", 1, true)
+	then
+		return "crashed"
+	end
+
+	local cursor_line = trim(input.cursor_line or "")
+	if input.command == "claude" then
+		local draft = cursor_line:match("^❯(.*)$")
+		return draft and trim(draft) == "" and "empty_prompt" or "busy"
+	end
+	if input.command == "codex" then
+		return cursor_line == "› Ask Codex to do anything"
+			and "empty_prompt"
+			or "busy"
+	end
+
+	local draft = cursor_line:match("^│%s*❯(.-)%s*│$")
+	return draft and trim(draft) == "" and "empty_prompt" or "busy"
+end
+
 function M.decide(input)
 	if input.seen[input.message_key] then
 		return { action = "ignore", reason = "duplicate" }
@@ -30,4 +70,3 @@ function M.decide(input)
 end
 
 return M
-

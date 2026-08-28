@@ -35,6 +35,23 @@ function M.parse(argv)
 			result.simple = true
 		elseif value == "--yes" then
 			result.confirm = false
+		elseif value == "--once" then
+			result.once = true
+		elseif value == "--no-wake" then
+			result.wake = false
+		elseif value == "--interval" then
+			local interval = tonumber(require_value(argv, index, value, "a positive number"))
+			if not interval or interval <= 0 then
+				error("--interval requires a positive number", 0)
+			end
+			result.interval = interval
+			index = index + 1
+		elseif value == "--maildir" then
+			result.maildir = require_value(argv, index, value, "a path")
+			index = index + 1
+		elseif value == "--state-file" then
+			result.state_file = require_value(argv, index, value, "a path")
+			index = index + 1
 		elseif value == "--as" then
 			result.identity = require_value(argv, index, value, "a project identity")
 			index = index + 1

@@ -11,6 +11,8 @@ let
 	tlsDirectory = "${cfg.stateDirectory}/tls";
 	tlsCertificateFile = "${tlsDirectory}/${cfg.tailscaleDomain}.crt";
 	tlsKeyFile = "${tlsDirectory}/${cfg.tailscaleDomain}.key";
+	watchStateDirectory = "${cfg.stateDirectory}/watch";
+	watchStateFile = "${watchStateDirectory}/state.json";
 	postfixQueue = "/var/lib/postfix/queue";
 	himalayaConfig = pkgs.writeText "unix-mail-redux-himalaya.toml" ''
 		[accounts.unix_mail_redux]
@@ -102,6 +104,43 @@ in
 			default = himalayaConfig;
 			description = "Generated non-secret Himalaya account configuration.";
 		};
+
+		package = lib.mkOption {
+			type = lib.types.package;
+			default = pkgs.callPackage ./package.nix { };
+			defaultText = lib.literalExpression "pkgs.callPackage ./nix/package.nix { }";
+			description = "The post CLI package used by people and the delivery watcher.";
+		};
+
+		enableWatcher = lib.mkOption {
+			type = lib.types.bool;
+			default = true;
+			description = "Watch new Maildir deliveries and notify matching agent sessions.";
+		};
+
+		wakeProjects = lib.mkOption {
+			type = lib.types.listOf (lib.types.strMatching "([*]|[a-z0-9][a-z0-9_-]{0,62})");
+			default = [ ];
+			description = "Projects authorized for empty-prompt wake input; * authorizes all projects.";
+		};
+
+		watchIntervalSeconds = lib.mkOption {
+			type = lib.types.ints.positive;
+			default = 2;
+			description = "Seconds between local Maildir scans.";
+		};
+
+		wakeCooldownSeconds = lib.mkOption {
+			type = lib.types.ints.positive;
+			default = 60;
+			description = "Minimum seconds between wakes for one project.";
+		};
+
+		noticeRetrySeconds = lib.mkOption {
+			type = lib.types.ints.positive;
+			default = 300;
+			description = "Seconds before an unwoken delivery is announced again.";
+		};
 	};
 
 	config = lib.mkIf cfg.enable {
@@ -121,6 +160,7 @@ in
 		];
 
 		environment.etc."unix-mail-redux/himalaya.toml".source = himalayaConfig;
+		environment.systemPackages = [ cfg.package ];
 
 		networking.firewall.interfaces.${cfg.tailscaleInterface}.allowedTCPPorts = [
 			465
@@ -240,6 +280,7 @@ in
 				${pkgs.coreutils}/bin/install -d -m 0700 -o ${lib.escapeShellArg cfg.owner} -g ${lib.escapeShellArg ownerGroup} "$(${pkgs.coreutils}/bin/dirname "$password_file")"
 				${pkgs.coreutils}/bin/install -d -m 0750 -o root -g dovecot2 "$(${pkgs.coreutils}/bin/dirname "$auth_file")"
 				${pkgs.coreutils}/bin/install -d -m 0700 -o ${lib.escapeShellArg cfg.owner} -g ${lib.escapeShellArg ownerGroup} "$mail_dir"
+				${pkgs.coreutils}/bin/install -d -m 0700 -o ${lib.escapeShellArg cfg.owner} -g ${lib.escapeShellArg ownerGroup} ${lib.escapeShellArg watchStateDirectory}
 				for mailbox in Sent Drafts Trash; do
 					mailbox_dir="$mail_dir/.$mailbox"
 					${pkgs.coreutils}/bin/install -d -m 0700 \
@@ -320,6 +361,35 @@ in
 				OnCalendar = "daily";
 				Persistent = true;
 				RandomizedDelaySec = "15m";
+			};
+		};
+
+		systemd.services.unix-mail-redux-watch = lib.mkIf cfg.enableWatcher {
+			description = "Notify idle agent sessions of new UNIX MAIL REDUX mail";
+			wantedBy = [ "multi-user.target" ];
+			after = [
+				"dovecot.service"
+				"unix-mail-redux-credentials.service"
+			];
+			requires = [
+				"dovecot.service"
+				"unix-mail-redux-credentials.service"
+			];
+			environment = {
+				HOME = ownerHome;
+				POST_WAKE_PROJECTS = lib.concatStringsSep "," cfg.wakeProjects;
+				POST_WATCH_INTERVAL_SECONDS = toString cfg.watchIntervalSeconds;
+				POST_WAKE_COOLDOWN_SECONDS = toString cfg.wakeCooldownSeconds;
+				POST_NOTICE_RETRY_SECONDS = toString cfg.noticeRetrySeconds;
+			};
+			serviceConfig = {
+				Type = "simple";
+				User = cfg.owner;
+				Group = ownerGroup;
+				ExecStart = "${lib.getExe cfg.package} watch --maildir ${lib.escapeShellArg cfg.mailDirectory} --state-file ${lib.escapeShellArg watchStateFile}";
+				Restart = "on-failure";
+				RestartSec = 2;
+				NoNewPrivileges = true;
 			};
 		};
 

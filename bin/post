@@ -8,6 +8,7 @@ local args = require("args")
 local app = require("app")
 local process = require("process")
 local review = require("review")
+local watch_runtime = require("watch_runtime")
 
 local argv = {}
 for index = 1, #arg do
@@ -33,6 +34,68 @@ if parsed.verb == "about" then
 	io.write("post 0.1.0: project-aware Unix mail for humans and agents (",
 		os_name, " ", arch_name, ")\n")
 	os.exit(0)
+end
+
+if parsed.verb == "watch" then
+	local maildir = parsed.maildir or os.getenv("POST_MAILDIR")
+	if not maildir or maildir == "" then
+		io.stderr:write("post: watch requires --maildir or POST_MAILDIR\n")
+		os.exit(2)
+	end
+	local state_file = parsed.state_file or os.getenv("POST_WATCH_STATE")
+	if not state_file or state_file == "" then
+		local state_home = os.getenv("XDG_STATE_HOME")
+			or ((os.getenv("HOME") or ".") .. "/.local/state")
+		state_file = state_home .. "/unix-mail-redux/watch.json"
+	end
+
+	local function positive_number(value, name, fallback)
+		if value == nil or value == "" then return fallback end
+		local number = tonumber(value)
+		if not number or number <= 0 then
+			io.stderr:write("post: ", name, " must be a positive number\n")
+			os.exit(2)
+		end
+		return number
+	end
+
+	local authorized = watch_runtime.parse_authorized(os.getenv("POST_WAKE_PROJECTS") or "")
+	if parsed.wake == false then
+		authorized = {}
+	end
+	local watch_config = {
+		maildir = maildir,
+		state_file = state_file,
+		tmux = os.getenv("POST_TMUX") or "tmux",
+		authorized = authorized,
+		cooldown = positive_number(
+			os.getenv("POST_WAKE_COOLDOWN_SECONDS"),
+			"POST_WAKE_COOLDOWN_SECONDS",
+			60
+		),
+		notice_retry = positive_number(
+			os.getenv("POST_NOTICE_RETRY_SECONDS"),
+			"POST_NOTICE_RETRY_SECONDS",
+			300
+		),
+	}
+	local interval = parsed.interval or positive_number(
+		os.getenv("POST_WATCH_INTERVAL_SECONDS"),
+		"POST_WATCH_INTERVAL_SECONDS",
+		2
+	)
+
+	while true do
+		local watched, watch_error = pcall(watch_runtime.run_once, watch_config)
+		if not watched then
+			io.stderr:write("post: ", tostring(watch_error), "\n")
+			os.exit(1)
+		end
+		if parsed.once then
+			os.exit(0)
+		end
+		require("luv").sleep(math.floor(interval * 1000))
+	end
 end
 
 local git_root

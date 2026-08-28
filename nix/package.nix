@@ -4,6 +4,7 @@
 	makeWrapper,
 	luajit,
 	himalaya,
+	tmux,
 }:
 
 let
@@ -40,7 +41,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 		makeWrapper "${runtimeLua}/bin/luajit" "$out/bin/post" \
 			--add-flags "$out/share/unix-mail-redux/post.lua" \
 			--prefix LUA_PATH ';' "$out/share/unix-mail-redux/?.lua" \
-			--set-default POST_HIMALAYA "${lib.getExe himalaya}"
+			--set-default POST_HIMALAYA "${lib.getExe himalaya}" \
+			--set-default POST_TMUX "${lib.getExe tmux}"
 		runHook postInstall
 	'';
 

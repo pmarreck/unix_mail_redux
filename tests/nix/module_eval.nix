@@ -20,6 +20,7 @@ let
 					humanLocalPart = "peter";
 					domain = "agents.home.arpa";
 					tailscaleDomain = "mail.example.ts.net";
+					wakeProjects = [ "*" ];
 				};
 			}
 		];
@@ -46,6 +47,9 @@ assert cfg.services.dovecot2.settings."namespace inbox".separator == ".";
 assert cfg.networking.firewall.interfaces.tailscale0.allowedTCPPorts == [ 465 993 ];
 assert cfg.systemd.services ? unix-mail-redux-credentials;
 assert cfg.systemd.services ? unix-mail-redux-tls;
+assert cfg.systemd.services ? unix-mail-redux-watch;
+assert cfg.systemd.services.unix-mail-redux-watch.serviceConfig.User == "operator";
+assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_WAKE_PROJECTS == "*";
 assert cfg.systemd.timers ? unix-mail-redux-tls;
 assert lib.hasInfix "peter@agents\\.home\\.arpa" cfg.services.postfix.virtual;
 assert lib.hasInfix "Agents.$1" cfg.services.postfix.virtual;

@@ -31,10 +31,15 @@
 	  project routing, LMTP, Maildir, IMAPS subject/body retrieval, shared Seen
 	  state, reviewed replies with exact thread headers, Sent-copy storage,
 	  warning-free Postfix delivery, and SMTP-time relay rejection.
-- [ ] Implement a pure, audited wake-decision state machine and a delivery
-      watcher that never types into an ambiguous terminal.
-      - Curiosity poke: delivery is data, never authorization to execute its
-        contents.
+- [x] Implement a pure, audited wake-decision state machine and a delivery
+	  watcher that never types into an ambiguous terminal.
+	  - Curiosity poke: delivery is data, never authorization to execute its
+	    contents.
+	  Completed 2026-08-27 22:00 EDT: the unprivileged watcher discovers new
+	  project Maildir entries, persists notice/wake state atomically, waits for
+	  busy agents to become idle, and recognizes empty Claude, Codex, and Grok
+	  prompts at the tmux cursor row. Unknown panes, drafts, dialogs, duplicate
+	  agents, absent sessions, and unauthorized projects receive no input.
 - [ ] Integrate the module into the Thelio NixOS flake, build and dry-activate
       it, then request Peter's approval before activation.
 - [ ] Verify `post`, GNU mail notification, and Mail.app over Tailscale; write

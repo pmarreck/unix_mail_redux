@@ -37,6 +37,23 @@ describe("post argument parsing", function()
 		}))
 	end)
 
+	it("parses deterministic watcher controls and paths with spaces", function()
+		assert.same({
+			verb = "watch",
+			format = "human",
+			once = true,
+			interval = 3.5,
+			maildir = "/tmp/mail root",
+			state_file = "/tmp/state root/watch.json",
+			wake = false,
+		}, args.parse({
+			"watch", "--once", "--interval", "3.5",
+			"--maildir", "/tmp/mail root",
+			"--state-file", "/tmp/state root/watch.json",
+			"--no-wake",
+		}))
+	end)
+
 	it("recognizes help and about", function()
 		assert.same({ verb = "help", format = "human" }, args.parse({ "-h" }))
 		assert.same({ verb = "about", format = "human" }, args.parse({ "--about" }))
@@ -47,5 +64,7 @@ describe("post argument parsing", function()
 		assert.has_error(function() args.parse({ "read" }) end, "read requires a message ID")
 		assert.has_error(function() args.parse({ "--as" }) end, "--as requires a project identity")
 		assert.has_error(function() args.parse({ "--body" }) end, "--body requires a value")
+		assert.has_error(function() args.parse({ "watch", "--interval", "0" }) end,
+			"--interval requires a positive number")
 	end)
 end)
