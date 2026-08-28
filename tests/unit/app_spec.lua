@@ -14,11 +14,11 @@ describe("post application planning", function()
 			format = "json",
 		}, { config = config })
 		assert.are.equal("validate_gui", plan.identity)
-		assert.are.equal("Agents/validate_gui", plan.mailbox)
+		assert.are.equal("Agents.validate_gui", plan.mailbox)
 		assert.same({
 			"himalaya", "--config", "/etc/unix-mail-redux/himalaya.toml",
 			"--account", "unix_mail_redux", "--json",
-			"envelope", "list", "--mailbox", "Agents/validate_gui",
+			"envelope", "list", "--mailbox", "Agents.validate_gui",
 		}, plan.argv)
 	end)
 
@@ -28,7 +28,7 @@ describe("post application planning", function()
 			git_root = "/home/peter/Code/sctui_rust",
 		})
 		assert.are.equal("sctui_rust", plan.identity)
-		assert.are.equal("Agents/sctui_rust", plan.mailbox)
+		assert.are.equal("Agents.sctui_rust", plan.mailbox)
 	end)
 
 	it("uses Peter's INBOX outside a project", function()

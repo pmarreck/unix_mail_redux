@@ -74,8 +74,7 @@ function M.address(name, domain)
 end
 
 function M.mailbox(name)
-	return "Agents/" .. require_valid(name)
+	return "Agents." .. require_valid(name)
 end
 
 return M
-

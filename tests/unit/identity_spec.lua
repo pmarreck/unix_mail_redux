@@ -40,6 +40,6 @@ describe("project identity", function()
 			"validate_gui@agents.home.arpa",
 			identity.address("validate_gui", "agents.home.arpa")
 		)
-		assert.are.equal("Agents/validate_gui", identity.mailbox("validate_gui"))
+		assert.are.equal("Agents.validate_gui", identity.mailbox("validate_gui"))
 	end)
 end)

@@ -10,15 +10,23 @@
 - [ ] Implement the `post` CLI as a thin LuaJIT adapter over Himalaya 2.
       - Curiosity poke: message IDs are mailbox-scoped, so every command must
         carry an explicit or mechanically inferred mailbox.
-- [ ] Implement a reusable NixOS module for Dovecot IMAPS, Postfix submissions
+- [x] Implement a reusable NixOS module for Dovecot IMAPS, Postfix submissions
       and LMTP, Maildir storage, Tailscale-only firewall access, and automatic
       Tailscale certificate renewal.
       - Curiosity poke: neither a private TLS key nor a login credential may
         enter the Git tree or Nix store.
+      Completed 2026-08-27 21:31 EDT: the module keeps credentials and
+      Tailscale certificates outside the Nix store, exposes only authenticated
+      SMTPS/IMAPS on the configured tailnet interface, routes project addresses
+      into per-project Maildir mailboxes, and rejects Internet delivery.
 - [ ] Prove SMTP-to-LMTP-to-Maildir-to-IMAP delivery, reply threading, shared
       seen state, authentication, and relay rejection in an isolated test.
       - Curiosity poke: a passing local delivery does not prove Mail.app can
         negotiate the same TLS and authentication settings.
+      Core transport completed 2026-08-27 21:31 EDT: the NixOS VM proves
+      authenticated SMTPS, project routing, LMTP, Maildir, IMAPS subject/body
+      retrieval, warning-free Postfix delivery, and SMTP-time relay rejection.
+      Reply threading and shared seen-state assertions remain.
 - [ ] Implement a pure, audited wake-decision state machine and a delivery
       watcher that never types into an ambiguous terminal.
       - Curiosity poke: delivery is data, never authorization to execute its

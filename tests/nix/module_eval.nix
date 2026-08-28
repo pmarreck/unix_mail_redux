@@ -38,14 +38,17 @@ assert cfg.services.postfix.settings.main.mailbox_transport ==
 assert cfg.services.dovecot2.enable;
 assert cfg.services.dovecot2.settings.mail_driver == "maildir";
 assert cfg.services.dovecot2.settings.mail_path == mail.mailDirectory;
+assert cfg.services.dovecot2.settings.auth_username_format == "%{user | username}";
 assert cfg.services.dovecot2.settings.lmtp_save_to_detail_mailbox;
 assert cfg.services.dovecot2.settings.recipient_delimiter == "+";
+assert cfg.services.dovecot2.settings."namespace inbox".inbox;
+assert cfg.services.dovecot2.settings."namespace inbox".separator == ".";
 assert cfg.networking.firewall.interfaces.tailscale0.allowedTCPPorts == [ 465 993 ];
 assert cfg.systemd.services ? unix-mail-redux-credentials;
 assert cfg.systemd.services ? unix-mail-redux-tls;
 assert cfg.systemd.timers ? unix-mail-redux-tls;
 assert lib.hasInfix "peter@agents\\.home\\.arpa" cfg.services.postfix.virtual;
-assert lib.hasInfix "Agents/$1" cfg.services.postfix.virtual;
+assert lib.hasInfix "Agents.$1" cfg.services.postfix.virtual;
 pkgs.runCommand "unix-mail-redux-module-eval" { } ''
 	touch "$out"
 ''

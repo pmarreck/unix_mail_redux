@@ -26,11 +26,11 @@ let
 		smtp.sasl.plain.username = "${cfg.owner}"
 		smtp.sasl.plain.password.command = ["${pkgs.coreutils}/bin/cat", "${passwordFile}"]
 	'';
-	virtualAliases = ''
-		/^${cfg.humanLocalPart}@${lib.escapeRegex cfg.domain}$/ ${cfg.owner}
-		/^postmaster@${lib.escapeRegex cfg.domain}$/ ${cfg.owner}
-		/^([a-z0-9][a-z0-9_-]{0,62})@${lib.escapeRegex cfg.domain}$/ ${cfg.owner}+Agents/$1
-	'';
+	virtualAliases = lib.concatStringsSep "\n" [
+		"/^${cfg.humanLocalPart}@${lib.escapeRegex cfg.domain}$/ ${cfg.owner}"
+		"/^postmaster@${lib.escapeRegex cfg.domain}$/ ${cfg.owner}"
+		"/^([a-z0-9][a-z0-9_-]{0,62})@${lib.escapeRegex cfg.domain}$/ ${cfg.owner}+Agents.$1"
+	] + "\n";
 in
 {
 	options.services.unix-mail-redux = {
@@ -179,12 +179,17 @@ in
 				mail_driver = "maildir";
 				mail_home = ownerHome;
 				mail_path = cfg.mailDirectory;
+				auth_username_format = "%{user | username}";
 				auth_allow_cleartext = false;
 				auth_mechanisms = [ "plain" "login" ];
 				recipient_delimiter = "+";
 				lmtp_save_to_detail_mailbox = true;
 				lda_mailbox_autocreate = true;
 				lda_mailbox_autosubscribe = true;
+				"namespace inbox" = {
+					inbox = true;
+					separator = ".";
+				};
 				ssl = "required";
 				ssl_server_cert_file = tlsCertificateFile;
 				ssl_server_key_file = tlsKeyFile;
@@ -233,7 +238,7 @@ in
 				auth_file=${lib.escapeShellArg authFile}
 				mail_dir=${lib.escapeShellArg cfg.mailDirectory}
 				${pkgs.coreutils}/bin/install -d -m 0700 -o ${lib.escapeShellArg cfg.owner} -g ${lib.escapeShellArg ownerGroup} "$(${pkgs.coreutils}/bin/dirname "$password_file")"
-				${pkgs.coreutils}/bin/install -d -m 0700 -o root -g root "$(${pkgs.coreutils}/bin/dirname "$auth_file")"
+				${pkgs.coreutils}/bin/install -d -m 0750 -o root -g dovecot2 "$(${pkgs.coreutils}/bin/dirname "$auth_file")"
 				${pkgs.coreutils}/bin/install -d -m 0700 -o ${lib.escapeShellArg cfg.owner} -g ${lib.escapeShellArg ownerGroup} "$mail_dir"
 
 				if [ ! -s "$password_file" ]; then
