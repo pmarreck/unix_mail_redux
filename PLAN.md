@@ -40,12 +40,15 @@
 	  busy agents to become idle, and recognizes empty Claude, Codex, and Grok
 	  prompts at the tmux cursor row. Unknown panes, drafts, dialogs, duplicate
 	  agents, absent sessions, and unauthorized projects receive no input.
-- [ ] Integrate the module into the Thelio NixOS flake, build and dry-activate
+- [x] Integrate the module into the Thelio NixOS flake, build and dry-activate
       it, then request Peter's approval before activation.
       - Peter approved preparing a live NixOS switch on 2026-08-28; this
         service-only activation must not require a reboot.
-- [ ] Verify `post`, GNU mail notification, and Mail.app over Tailscale; write
-      the operator guide; commit and push only from a passing state.
+      Completed 2026-08-28 09:04 EDT: the live Thelio stack passed authenticated
+      SMTP, LMTP, Maildir, IMAP, installed-CLI retrieval, and tmux watcher
+      proofs after three RED/GREEN deployment defects were repaired.
+- [ ] Connect Mail.app over Tailscale and add a shell-level `You have new mail.`
+      notice; the operator guide and underlying IMAPS/SMTPS endpoints are live.
 - [ ] Accept the configured human local-part through explicit `--as`.
 - [ ] Add explicit `user:`, `project:`, `tmux:`, `claude:`, `codex:`, and
       `grok:` recipient namespaces; permit generic `agent:` only when its
@@ -58,6 +61,8 @@
         ambiguous generic `agent:` lookup must fail instead of broadcasting.
       - Curiosity poke: `tmux:` delivery must keep working after the pane uses
         `cd`, while `project:` delivery must follow the unique project pane.
-- [ ] Put the installed `post` CLI on Peter's PATH and document the optional
+- [x] Put the installed `post` CLI on Peter's PATH and document the optional
       one-letter `m` alias without making the repository name part of normal
       use.
+      Completed 2026-08-28 09:04 EDT: `/run/current-system/sw/bin/post` is live;
+      the README documents `alias m=post` without imposing it.
