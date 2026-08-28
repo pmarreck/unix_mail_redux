@@ -21,6 +21,7 @@ export LUA_PATH="$project_root/src/?.lua;$project_root/src/?/init.lua;;"
 
 run_suite unit busted --output=utfTerminal tests/unit
 run_suite integration busted --output=utfTerminal tests/integration
+run_suite tmux-focus-wake tests/integration/tmux_focus_wake_test
 run_suite cli tests/cli/post_test
 run_suite repository-contract tests/cli/repository_contract_test
 

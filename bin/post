@@ -67,6 +67,7 @@ if parsed.verb == "watch" then
 		maildir = maildir,
 		state_file = state_file,
 		tmux = os.getenv("POST_TMUX") or "tmux",
+		wake_client = os.getenv("POST_TMUX_WAKE") or "post-tmux-wake",
 		authorized = authorized,
 		cooldown = positive_number(
 			os.getenv("POST_WAKE_COOLDOWN_SECONDS"),

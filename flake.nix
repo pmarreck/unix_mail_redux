@@ -49,6 +49,10 @@
 							"post 0.1.0: project-aware Unix mail for humans and agents (${platformLabels.${system}})"
 						post --simple --help | ${pkgs.gnugrep}/bin/grep -Fqx \
 							'usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch]'
+						${nixpkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+							post-tmux-wake --help | ${pkgs.gnugrep}/bin/grep -Fqx \
+								'usage: post-tmux-wake --session NAME --pane ID --expected-cursor-y ROW --expected-cursor-line TEXT --message TEXT [--tmux PATH] [--socket PATH]'
+						''}
 						touch "$out"
 					'';
 				} // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {

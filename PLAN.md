@@ -49,7 +49,25 @@
       proofs after three RED/GREEN deployment defects were repaired.
 - [ ] Connect Mail.app over Tailscale and add a shell-level `You have new mail.`
       notice; the operator guide and underlying IMAPS/SMTPS endpoints are live.
-- [ ] Accept the configured human local-part through explicit `--as`.
+- [x] Replace direct tmux wake injection with a controllable terminal client
+      attached to the target session, then prove Codex submission and retain
+      Claude Code and Grok as live follow-up checks.
+      - Prior live evidence: plain tmux `Enter` and kitty-keyboard encodings did
+        not submit reliably across harnesses, especially Codex; Claude Code was
+        the permissive case. The 2026-08-28 wake inserted text into Codex but
+        remained queued for five hours until Peter pressed Enter manually.
+      - Curiosity poke: the client must target one exact tmux pane, negotiate
+        the pane's active keyboard protocol, and exit without leaving a hidden
+        terminal process or attached client behind.
+      Completed 2026-08-28 15:08 EDT: libghostty isolated the missing focus
+      state; `strace` proved detached Codex received and ignored Return without
+      `FocusIn`. The production helper now uses a short-lived `script(1)` PTY,
+      revalidates the prompt around attachment, separates focus/text/Return by
+      observed render boundaries, ignores client geometry, and leaves no tmux
+      client behind. The deterministic fixture, full suite, Nix package, and a
+      late-attached Codex 0.150.1 proof all pass.
+- [x] Accept the configured human local-part through explicit `--as`.
+      Completed 2026-08-28 09:04 EDT.
 - [ ] Add explicit `user:`, `project:`, `tmux:`, `claude:`, `codex:`, and
       `grok:` recipient namespaces; permit generic `agent:` only when its
       registry lookup is unique, retain an unqualified name as shorthand for

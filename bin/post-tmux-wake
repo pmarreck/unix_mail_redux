@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+
+set -u
+
+tmux_executable=${POST_TMUX:-tmux}
+script_executable=${POST_TMUX_SCRIPT:-script}
+tmux_socket=
+session=
+pane=
+expected_cursor_y=
+expected_cursor_line=
+message=
+have_expected_cursor_line=0
+
+usage() {
+	printf '%s\n' \
+		'usage: post-tmux-wake --session NAME --pane ID --expected-cursor-y ROW --expected-cursor-line TEXT --message TEXT [--tmux PATH] [--socket PATH]'
+}
+
+fail() {
+	printf 'post-tmux-wake: %s\n' "$1" >&2
+	exit "${2:-1}"
+}
+
+while (( $# > 0 )); do
+	case $1 in
+		--tmux)
+			(( $# >= 2 )) || fail '--tmux requires a value' 2
+			tmux_executable=$2
+			shift 2
+			;;
+		--socket)
+			(( $# >= 2 )) || fail '--socket requires a value' 2
+			tmux_socket=$2
+			shift 2
+			;;
+		--session)
+			(( $# >= 2 )) || fail '--session requires a value' 2
+			session=$2
+			shift 2
+			;;
+		--pane)
+			(( $# >= 2 )) || fail '--pane requires a value' 2
+			pane=$2
+			shift 2
+			;;
+		--expected-cursor-y)
+			(( $# >= 2 )) || fail '--expected-cursor-y requires a value' 2
+			expected_cursor_y=$2
+			shift 2
+			;;
+		--expected-cursor-line)
+			(( $# >= 2 )) || fail '--expected-cursor-line requires a value' 2
+			expected_cursor_line=$2
+			have_expected_cursor_line=1
+			shift 2
+			;;
+		--message)
+			(( $# >= 2 )) || fail '--message requires a value' 2
+			message=$2
+			shift 2
+			;;
+		-h|--help)
+			usage
+			exit 0
+			;;
+		*)
+			fail "unknown argument: $1" 2
+			;;
+	esac
+done
+
+[[ -n $session ]] || fail '--session is required' 2
+[[ -n $pane ]] || fail '--pane is required' 2
+[[ $expected_cursor_y =~ ^[0-9]+$ ]] || fail '--expected-cursor-y must be a non-negative integer' 2
+(( have_expected_cursor_line == 1 )) || fail '--expected-cursor-line is required' 2
+[[ -n $message ]] || fail '--message is required' 2
+[[ $message != *$'\n'* && $message != *$'\r'* && $message != *$'\033'* ]] || \
+	fail '--message must be one line without terminal control bytes' 2
+
+tmux_command=("$tmux_executable")
+if [[ -n $tmux_socket ]]; then
+	tmux_command+=(-S "$tmux_socket")
+fi
+
+active_pane="$("${tmux_command[@]}" display-message -p -t "$session" '#{pane_id}')" || \
+	fail "cannot inspect tmux session: $session"
+[[ $active_pane == "$pane" ]] || fail "target pane $pane is not active in session $session"
+
+revalidate_prompt() {
+	local actual_cursor_y screen actual_cursor_line
+	actual_cursor_y="$("${tmux_command[@]}" display-message -p -t "$pane" '#{cursor_y}')" || return 1
+	[[ $actual_cursor_y == "$expected_cursor_y" ]] || return 1
+	screen="$("${tmux_command[@]}" capture-pane -p -t "$pane")" || return 1
+	actual_cursor_line="$(sed -n "$((actual_cursor_y + 1))p" <<<"$screen")"
+	[[ $actual_cursor_line == "$expected_cursor_line" ]]
+}
+
+revalidate_prompt || fail 'agent prompt changed before wake; refusing input'
+clients_before="$("${tmux_command[@]}" list-clients -t "$session" -F '#{client_name}' 2>/dev/null | sort || true)"
+
+wake_root="$(mktemp -d "${TMPDIR:-/tmp}/post-tmux-wake.XXXXXX")" || \
+	fail 'cannot create temporary PTY state'
+input_fifo="$wake_root/input"
+terminal_output="$wake_root/output"
+script_pid=
+
+cleanup() {
+	exec 7>&- 2>/dev/null || true
+	if [[ -n $script_pid ]]; then
+		kill "$script_pid" 2>/dev/null || true
+		wait "$script_pid" 2>/dev/null || true
+	fi
+	rm -f -- "$input_fifo" "$terminal_output"
+	rmdir -- "$wake_root" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+mkfifo "$input_fifo" || fail 'cannot create PTY input channel'
+: > "$terminal_output" || fail 'cannot create PTY output log'
+
+TMUX_WAKE_EXECUTABLE=$tmux_executable \
+TMUX_WAKE_SOCKET=$tmux_socket \
+TMUX_WAKE_SESSION=$session \
+TERM=xterm-256color \
+	"$script_executable" -qefc \
+	'if [ -n "$TMUX_WAKE_SOCKET" ]; then exec "$TMUX_WAKE_EXECUTABLE" -S "$TMUX_WAKE_SOCKET" attach-session -f ignore-size -t "$TMUX_WAKE_SESSION"; else exec "$TMUX_WAKE_EXECUTABLE" attach-session -f ignore-size -t "$TMUX_WAKE_SESSION"; fi' \
+	/dev/null < "$input_fifo" > "$terminal_output" 2>&1 &
+script_pid=$!
+exec 7>"$input_fifo" || fail 'cannot open PTY input channel'
+
+client_ready=0
+for _ in {1..200}; do
+	clients_now="$("${tmux_command[@]}" list-clients -t "$session" -F '#{client_name}' 2>/dev/null | sort || true)"
+	if [[ $clients_now != "$clients_before" ]]; then
+		client_ready=1
+		break
+	fi
+	kill -0 "$script_pid" 2>/dev/null || fail 'tmux PTY client exited before attaching'
+	sleep 0.01
+done
+(( client_ready == 1 )) || fail 'tmux PTY client did not attach'
+
+revalidate_prompt || fail 'agent prompt changed while wake client attached; refusing input'
+# tmux initializes a new client as focused, but that automatic FocusIn may still
+# be queued behind input sent through another command client. Force a state
+# transition on this PTY, then let the application render the typed message
+# before Return. Codex deliberately ignores a Return received in the same input
+# batch as text or before its focus state reaches the UI event loop.
+printf '\033[O\033[I%s' "$message" >&7 || fail 'cannot write wake input to PTY client'
+
+message_visible=0
+for _ in {1..200}; do
+	if grep -aFq -- "$message" "$terminal_output"; then
+		message_visible=1
+		break
+	fi
+	kill -0 "$script_pid" 2>/dev/null || fail 'tmux PTY client exited before confirming wake input'
+	sleep 0.01
+done
+(( message_visible == 1 )) || fail 'agent did not echo the wake input'
+
+screen_before_return="$("${tmux_command[@]}" capture-pane -p -t "$pane")" || \
+	fail 'cannot capture agent screen before Return'
+printf '\r' >&7 || fail 'cannot submit wake input through PTY client'
+return_observed=0
+for _ in {1..200}; do
+	screen_after_return="$("${tmux_command[@]}" capture-pane -p -t "$pane")" || \
+		fail 'cannot capture agent screen after Return'
+	if [[ $screen_after_return != "$screen_before_return" ]]; then
+		return_observed=1
+		break
+	fi
+	kill -0 "$script_pid" 2>/dev/null || fail 'tmux PTY client exited before confirming Return'
+	sleep 0.01
+done
+(( return_observed == 1 )) || fail 'agent did not redraw after Return'
+
+exit 0

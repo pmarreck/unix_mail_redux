@@ -91,15 +91,21 @@ function M.run_once(config, dependencies)
 		if action.type == "notify" and target.session then
 			argv = tmux_wake.notify_argv(config.tmux, target, action.project, action.count)
 		elseif action.type == "wake" then
-			argv = tmux_wake.wake_argv(config.tmux, target, action.project, action.count)
+			argv = tmux_wake.wake_argv(
+				config.wake_client,
+				config.tmux,
+				target,
+				action.project,
+				action.count
+			)
 		end
 		if argv then
 			local result = deps.run(argv, { capture = true })
 			if result.rc ~= 0 then
 				local detail = (result.stderr or ""):gsub("%s+$", "")
 				error(string.format(
-					"tmux %s failed for %s: %s",
-					action.type,
+					"%s failed for %s: %s",
+					action.type == "wake" and "terminal wake" or "tmux notify",
 					action.project,
 					detail ~= "" and detail or "exit " .. tostring(result.rc)
 				), 0)

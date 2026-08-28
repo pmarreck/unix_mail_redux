@@ -73,15 +73,18 @@ function M.probe(runner, executable, project)
 	if captured.rc ~= 0 or not cursor_y then
 		return { state = "unknown" }
 	end
+	local cursor_line = M.cursor_line(captured.stdout, cursor_y)
 	return {
 		state = wake.classify_pane({
 			command = pane.command,
-			cursor_line = M.cursor_line(captured.stdout, cursor_y),
+			cursor_line = cursor_line,
 			screen = captured.stdout,
 		}),
 		session = pane.session,
 		pane = pane.pane,
 		command = pane.command,
+		cursor_y = cursor_y,
+		cursor_line = cursor_line,
 	}
 end
 
@@ -96,7 +99,7 @@ function M.notify_argv(executable, target, project, count)
 	}
 end
 
-function M.wake_argv(executable, target, project, count)
+function M.wake_argv(wake_client, tmux, target, project, count)
 	local message = string.format(
 		"📬 You have %d unread %s for %s. " ..
 		"Run post list --as %s; inspect them. " ..
@@ -107,8 +110,13 @@ function M.wake_argv(executable, target, project, count)
 		project
 	)
 	return {
-		executable, "send-keys", "-t", target.pane, "-l", message,
-		";", "send-keys", "-t", target.pane, "Enter",
+		wake_client,
+		"--tmux", tmux,
+		"--session", target.session,
+		"--pane", target.pane,
+		"--expected-cursor-y", tostring(target.cursor_y),
+		"--expected-cursor-line", target.cursor_line,
+		"--message", message,
 	}
 end
 

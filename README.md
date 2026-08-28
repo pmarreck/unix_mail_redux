@@ -62,5 +62,10 @@ Configure a manual IMAP account with these values:
 The server accepts connections only through Tailscale. Internet delivery and
 Internet relay are deliberately disabled.
 
+Agent wakeups use a short-lived real tmux terminal client because Codex ignores
+Return while its pane is detached and unfocused. The measured cause, failed
+approaches, and cleanup guarantees are in
+[`docs/TMUX_WAKE.md`](docs/TMUX_WAKE.md).
+
 See `PLAN.md` for the tested delivery milestones and remaining live-client
 verification.

@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+set -u
+
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+test_root="$(mktemp -d "${TMPDIR:-/tmp}/post-tmux-focus-test.XXXXXX")"
+tmux_socket="$test_root/tmux.sock"
+events_fifo="$test_root/events"
+session=focus-gate
+helper="$project_root/bin/post-tmux-wake"
+
+cleanup() {
+	tmux -S "$tmux_socket" kill-server 2>/dev/null || true
+	exec 8>&- 2>/dev/null || true
+	rm -f -- "$events_fifo"
+	rmdir -- "$test_root" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+fail() {
+	printf 'FAIL %s\n' "$1" >&2
+	exit 1
+}
+
+expect_event() {
+	local expected=$1
+	local actual
+	IFS= read -r actual <&8 || fail "focus fixture closed before $expected"
+	[[ $actual == "$expected" ]] || fail "expected event '$expected', got '$actual'"
+}
+
+mkfifo "$events_fifo"
+exec 8<>"$events_fifo"
+tmux -S "$tmux_socket" new-session -d -s "$session" \
+	"luajit '$project_root/tests/fixtures/focus_gate.lua' '$events_fifo'"
+expect_event READY
+
+# Reproduce the Codex failure: bytes and Return arrive, but a detached app that
+# requested focus events refuses to submit while it remains unfocused.
+tmux -S "$tmux_socket" send-keys -t "$session" -l direct-wake
+tmux -S "$tmux_socket" send-keys -t "$session" Enter
+expect_event IGNORED:direct-wake
+
+cursor_y="$(tmux -S "$tmux_socket" display-message -p -t "$session" '#{cursor_y}')"
+screen="$(tmux -S "$tmux_socket" capture-pane -p -t "$session")"
+cursor_line="$(sed -n "$((cursor_y + 1))p" <<<"$screen")"
+
+"$helper" \
+	--tmux tmux \
+	--socket "$tmux_socket" \
+	--session "$session" \
+	--pane "$(tmux -S "$tmux_socket" display-message -p -t "$session" '#{pane_id}')" \
+	--expected-cursor-y "$cursor_y" \
+	--expected-cursor-line "$cursor_line" \
+	--message terminal-client-wake || fail "PTY wake helper failed"
+
+focus_seen=0
+submitted_seen=0
+for _ in {1..5}; do
+	IFS= read -r event <&8 || fail 'focus fixture closed before submission'
+	[[ $event == FOCUS_IN ]] && focus_seen=1
+	if [[ $event == SUBMITTED:terminal-client-wake ]]; then
+		submitted_seen=1
+		break
+	fi
+done
+(( focus_seen == 1 )) || fail 'PTY wake never focused the target pane'
+(( submitted_seen == 1 )) || fail 'PTY wake did not submit the message'
+
+clients="$(tmux -S "$tmux_socket" list-clients -F '#{client_name}' 2>/dev/null || true)"
+[[ -z $clients ]] || fail "PTY wake helper left a tmux client attached"
+
+printf 'PASS tmux focus wake\n'
