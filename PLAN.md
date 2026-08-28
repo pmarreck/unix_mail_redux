@@ -42,5 +42,10 @@
 	  agents, absent sessions, and unauthorized projects receive no input.
 - [ ] Integrate the module into the Thelio NixOS flake, build and dry-activate
       it, then request Peter's approval before activation.
+      - Peter approved preparing a live NixOS switch on 2026-08-28; this
+        service-only activation must not require a reboot.
 - [ ] Verify `post`, GNU mail notification, and Mail.app over Tailscale; write
       the operator guide; commit and push only from a passing state.
+- [ ] Put the installed `post` CLI on Peter's PATH and document the optional
+      one-letter `m` alias without making the repository name part of normal
+      use.
