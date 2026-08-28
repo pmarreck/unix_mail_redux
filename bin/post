@@ -1,0 +1,37 @@
+#!/usr/bin/env luajit
+
+local executable = arg[0]
+local script_directory = executable:match("^(.*)/[^/]+$") or "."
+package.path = script_directory .. "/../src/?.lua;" .. package.path
+
+local args = require("args")
+
+local argv = {}
+for index = 1, #arg do
+	argv[index] = arg[index]
+end
+
+local ok, parsed = pcall(args.parse, argv)
+if not ok then
+	io.stderr:write("post: ", tostring(parsed), "\n")
+	os.exit(2)
+end
+
+if parsed.verb == "help" then
+	io.write("usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch]\n")
+	os.exit(0)
+end
+
+if parsed.verb == "about" then
+	local os_names = { Linux = "linux", OSX = "macos", Windows = "windows" }
+	local arch_names = { x64 = "x86_64", arm64 = "aarch64" }
+	local os_name = os_names[jit.os] or string.lower(jit.os)
+	local arch_name = arch_names[jit.arch] or jit.arch
+	io.write("post 0.1.0: project-aware Unix mail for humans and agents (",
+		os_name, " ", arch_name, ")\n")
+	os.exit(0)
+end
+
+io.stderr:write("post: mail account is not configured yet\n")
+os.exit(1)
+

@@ -1,0 +1,11 @@
+# Dirtree: Stateful directory trees in the CLI for humans and LLMs. https://github.com/pmarreck/dirtree
+ver=1.2
+annotate=[
+	bin/post = LuaJIT human/agent mail CLI entry point
+	flake.nix = Pinned LuaJIT/Himalaya development environment and future package/module outputs
+	src/args.lua = Pure order-independent parser for the post CLI
+	src/identity.lua = Pure project identity validation, collision classification, and mail address/folder derivation
+	src/transport.lua = Shell-free Himalaya argv construction
+	src/wake.lua = Pure conservative agent wake-decision state machine
+	tests = Unit and CLI contract tests
+]

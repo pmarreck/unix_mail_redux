@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -u
+
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+failures=0
+
+run_suite() {
+	local label=$1
+	shift
+	printf 'TEST %s\n' "$label"
+	"$@"
+	local suite_rc=$?
+	if (( suite_rc != 0 )); then
+		failures=$((failures + 1))
+	fi
+}
+
+cd "$project_root" || exit 1
+export LUA_PATH="$project_root/src/?.lua;$project_root/src/?/init.lua;;"
+
+run_suite unit busted --output=utfTerminal tests/unit
+run_suite cli tests/cli/post_test
+
+if (( failures > 0 )); then
+	printf 'FAIL %d suite(s)\n' "$failures" >&2
+	exit "$failures"
+fi
+
+printf 'PASS all suites\n'
+

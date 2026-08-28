@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -u
+
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source /home/pmarreck/dotfiles/bin/src/capture.bash
+
+failures=0
+
+expect() {
+	local description=$1
+	local expected_rc=$2
+	local expected_out=$3
+	local expected_err=$4
+	shift 4
+	local out err rc
+	capture "$@"
+	if [[ "$rc" != "$expected_rc" || "$out" != "$expected_out" || "$err" != "$expected_err" ]]; then
+		printf 'FAIL %s\n  rc: %q\n  out: %q\n  err: %q\n' \
+			"$description" "$rc" "$out" "$err" >&2
+		failures=$((failures + 1))
+	fi
+}
+
+expect "help" 0 \
+	"usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch]" \
+	"" \
+	"$project_root/bin/post" --simple --help
+
+expect "about" 0 \
+	"post 0.1.0: project-aware Unix mail for humans and agents (linux x86_64)" \
+	"" \
+	"$project_root/bin/post" --simple --about
+
+expect "unknown option" 2 "" "post: unknown option: --wat" \
+	"$project_root/bin/post" --wat
+
+if (( failures > 0 )); then
+	exit "$failures"
+fi
+
+printf 'PASS post CLI\n'
+
