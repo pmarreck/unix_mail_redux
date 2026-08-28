@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -u
+
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+failures=0
+
+expected_targets=$'checks.x86_64-linux.post-cli\nchecks.x86_64-linux.module-eval\nchecks.x86_64-linux.server-integration'
+actual_targets="$(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$project_root/.mechatron-prime/targets" 2>/dev/null)"
+if [ "$actual_targets" != "$expected_targets" ]; then
+	printf 'FAIL exact Mechatron target set\n' >&2
+	failures=$((failures + 1))
+fi
+
+expected_badge='[![Mechatron Prime CI](https://img.shields.io/endpoint?url=https%3A%2F%2Fthelio-nixos.tail66c90.ts.net%2Fbadges%2Funix_mail_redux.json&style=for-the-badge)](https://thelio-nixos.tail66c90.ts.net/mechatron-prime/)'
+actual_badge="$(head -1 "$project_root/README.md")"
+if [ "$actual_badge" != "$expected_badge" ]; then
+	printf 'FAIL canonical Mechatron badge is not the first README line\n' >&2
+	failures=$((failures + 1))
+fi
+
+if (( failures > 0 )); then
+	exit "$failures"
+fi
+
+printf 'PASS repository contract\n'

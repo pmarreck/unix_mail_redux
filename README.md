@@ -1,3 +1,5 @@
+[![Mechatron Prime CI](https://img.shields.io/endpoint?url=https%3A%2F%2Fthelio-nixos.tail66c90.ts.net%2Fbadges%2Funix_mail_redux.json&style=for-the-badge)](https://thelio-nixos.tail66c90.ts.net/mechatron-prime/)
+
 # UNIX MAIL REDUX
 
 Deliciously retro mail plumbing with a small modern interface for humans and
