@@ -29,6 +29,12 @@ describe("post application planning", function()
 		})
 		assert.are.equal("sctui_rust", plan.identity)
 		assert.are.equal("Agents.sctui_rust", plan.mailbox)
+		assert.same({
+			"himalaya", "--config", "/etc/unix-mail-redux/himalaya.toml",
+			"--account", "unix_mail_redux",
+			"flag", "add", "--flag", "seen", "42",
+			"--mailbox", "Agents.sctui_rust",
+		}, plan.after_argv)
 	end)
 
 	it("uses Peter's INBOX outside a project", function()
@@ -119,5 +125,47 @@ describe("post application planning", function()
 				human_local_part = "peter",
 			})
 		end, "message subject is required")
+	end)
+
+	it("plans reply preparation separately from sending", function()
+		local plan = app.plan({
+			verb = "reply",
+			id = "42",
+			body = "The bounded test now passes.\n",
+			format = "human",
+		}, {
+			config = config,
+			git_root = "/home/peter/Code/validate",
+			domain = "agents.home.arpa",
+			human_local_part = "peter",
+		})
+
+		assert.are.equal("validate", plan.identity)
+		assert.are.equal("Agents.validate", plan.mailbox)
+		assert.are.equal("The bounded test now passes.\n", plan.stdin)
+		assert.are.equal("The bounded test now passes.\n", plan.body)
+		assert.same({
+			"himalaya", "--config", "/etc/unix-mail-redux/himalaya.toml",
+			"--account", "unix_mail_redux",
+			"message", "reply", "42",
+			"--mailbox", "Agents.validate",
+			"--from", "validate@agents.home.arpa",
+		}, plan.argv)
+		assert.same({
+			"himalaya", "--config", "/etc/unix-mail-redux/himalaya.toml",
+			"--account", "unix_mail_redux",
+			"message", "send", "--save", "Sent",
+		}, plan.send_argv)
+	end)
+
+	it("rejects a reply without a body", function()
+		assert.has_error(function()
+			app.plan({ verb = "reply", id = "42", format = "human" }, {
+				config = config,
+				git_root = "/home/peter/Code/validate",
+				domain = "agents.home.arpa",
+				human_local_part = "peter",
+			})
+		end, "message body is required")
 	end)
 end)

@@ -43,6 +43,26 @@ function M.plan(parsed, context)
 		argv = transport.list(context.config, mailbox, parsed.format)
 	elseif parsed.verb == "read" then
 		argv = transport.read(context.config, mailbox, parsed.id, parsed.format)
+	elseif parsed.verb == "reply" then
+		if not parsed.body or parsed.body == "" then
+			error("message body is required", 0)
+		end
+		local from = address(resolved, context)
+		return {
+			identity = resolved,
+			mailbox = mailbox,
+			from = from,
+			body = parsed.body,
+			stdin = parsed.body,
+			argv = transport.reply_candidate(
+				context.config,
+				mailbox,
+				parsed.id,
+				from,
+				parsed.format
+			),
+			send_argv = transport.send_candidate(context.config, parsed.format),
+		}
 	elseif parsed.verb == "to" then
 		if not parsed.subject or parsed.subject == "" then
 			error("message subject is required", 0)
@@ -73,6 +93,9 @@ function M.plan(parsed, context)
 		identity = resolved,
 		mailbox = mailbox,
 		argv = argv,
+		after_argv = parsed.verb == "read"
+			and transport.mark_seen(context.config, mailbox, parsed.id)
+			or nil,
 	}
 end
 

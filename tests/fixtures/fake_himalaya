@@ -2,12 +2,35 @@
 
 set -u
 
-printf '%s\n' "$@"
-
+mode=list
+from=
+previous=
 for argument in "$@"; do
-	if [[ $argument == compose ]]; then
-		printf '%s\n' --BODY--
-		command cat
-		break
+	if [[ $previous == --from ]]; then
+		from=$argument
 	fi
+	case $argument in
+		reply) mode=reply ;;
+		compose) mode=compose ;;
+		send) mode=send ;;
+	esac
+	previous=$argument
 done
+
+if [[ $mode == reply ]]; then
+	printf 'From: %s\r\n' "$from"
+	printf 'To: peter@agents.home.arpa\r\n'
+	printf 'Subject: Re: Integration delivery\r\n'
+	printf 'In-Reply-To: <original@agents.home.arpa>\r\n'
+	printf 'References: <original@agents.home.arpa>\r\n'
+	printf 'Content-Type: text/plain; charset=utf-8\r\n'
+	printf '\r\n'
+	command cat
+	exit 0
+fi
+
+printf '%s\n' "$@"
+if [[ $mode == compose || $mode == send ]]; then
+	printf '%s\n' --BODY--
+	command cat
+fi

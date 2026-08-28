@@ -51,7 +51,7 @@ local config = {
 	account = os.getenv("POST_ACCOUNT") or "unix_mail_redux",
 }
 
-if parsed.verb == "to" and not parsed.body then
+if (parsed.verb == "to" or parsed.verb == "reply") and not parsed.body then
 	local handle_type = require("luv").guess_handle(0)
 	if handle_type ~= "tty" then
 		parsed.body = io.stdin:read("*a")
@@ -69,6 +69,36 @@ if not planned_ok then
 	os.exit(2)
 end
 
+if parsed.verb == "reply" then
+	local prepared = process.run(plan.argv, {
+		stdin = plan.stdin,
+		capture = true,
+	})
+	if prepared.stderr ~= "" then
+		io.stderr:write(prepared.stderr)
+	end
+	if prepared.rc ~= 0 then
+		os.exit(prepared.rc)
+	end
+
+	local preview_ok, preview = pcall(review.from_mime, prepared.stdout, plan.body)
+	if not preview_ok then
+		io.stderr:write("post: ", tostring(preview), "\n")
+		os.exit(2)
+	end
+
+	if parsed.confirm ~= false then
+		io.stderr:write(review.render(preview), "Send? [y/N] ")
+		if not review.confirmed(io.stdin:read("*l")) then
+			io.stderr:write("Not sent.\n")
+			os.exit(0)
+		end
+	end
+
+	local sent = process.run(plan.send_argv, { stdin = prepared.stdout })
+	os.exit(sent.rc)
+end
+
 if parsed.verb == "to" and parsed.confirm ~= false then
 	io.stderr:write(review.render(plan), "Send? [y/N] ")
 	if not review.confirmed(io.stdin:read("*l")) then
@@ -78,4 +108,10 @@ if parsed.verb == "to" and parsed.confirm ~= false then
 end
 
 local result = process.run(plan.argv, { stdin = plan.stdin })
+if result.rc ~= 0 then
+	os.exit(result.rc)
+end
+if plan.after_argv then
+	result = process.run(plan.after_argv)
+end
 os.exit(result.rc)

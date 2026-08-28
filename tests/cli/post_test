@@ -46,6 +46,11 @@ expect "JSON project inbox" 0 "$expected_list_args" "" \
 	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
 	"$project_root/bin/post" --json --as validate
 
+expected_read_args=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\nmessage\nread\n42\n--mailbox\nAgents.validate\n--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\nflag\nadd\n--flag\nseen\n42\n--mailbox\nAgents.validate'
+expect "reading marks the message Seen" 0 "$expected_read_args" "" \
+	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" read 42 --as validate
+
 expected_status_args=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\n--json\nmailbox\nlist'
 expect "JSON fleet status" 0 "$expected_status_args" "" \
 	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
@@ -70,6 +75,19 @@ expect "review and reject project message" 0 "" "${expected_review}Not sent." \
 	"$project_root/bin/post" to validate --as unix_mail_redux \
 	--subject "Bound the scanner" \
 	--body $'Please reproduce this under a cgroup ceiling.\n'
+
+reply_candidate=$'From: validate@agents.home.arpa\r\nTo: peter@agents.home.arpa\r\nSubject: Re: Integration delivery\r\nIn-Reply-To: <original@agents.home.arpa>\r\nReferences: <original@agents.home.arpa>\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nThe bounded test now passes.\n'
+expected_reply_send=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\nmessage\nsend\n--save\nSent\n--BODY--\n'"${reply_candidate%$'\n'}"
+expected_reply_review=$'From: validate@agents.home.arpa\nTo: peter@agents.home.arpa\nSubject: Re: Integration delivery\n\nThe bounded test now passes.\n\nSend? [y/N] '
+expect "review and accept threaded reply" 0 "$expected_reply_send" "$expected_reply_review" \
+	with_input yes env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" reply 42 --as validate \
+	--body $'The bounded test now passes.\n'
+
+expect "review and reject threaded reply" 0 "" "${expected_reply_review}Not sent." \
+	with_input no env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" reply 42 --as validate \
+	--body $'The bounded test now passes.\n'
 
 if (( failures > 0 )); then
 	exit "$failures"

@@ -240,6 +240,14 @@ in
 				${pkgs.coreutils}/bin/install -d -m 0700 -o ${lib.escapeShellArg cfg.owner} -g ${lib.escapeShellArg ownerGroup} "$(${pkgs.coreutils}/bin/dirname "$password_file")"
 				${pkgs.coreutils}/bin/install -d -m 0750 -o root -g dovecot2 "$(${pkgs.coreutils}/bin/dirname "$auth_file")"
 				${pkgs.coreutils}/bin/install -d -m 0700 -o ${lib.escapeShellArg cfg.owner} -g ${lib.escapeShellArg ownerGroup} "$mail_dir"
+				for mailbox in Sent Drafts Trash; do
+					mailbox_dir="$mail_dir/.$mailbox"
+					${pkgs.coreutils}/bin/install -d -m 0700 \
+						-o ${lib.escapeShellArg cfg.owner} \
+						-g ${lib.escapeShellArg ownerGroup} \
+						"$mailbox_dir" "$mailbox_dir/cur" \
+						"$mailbox_dir/new" "$mailbox_dir/tmp"
+				done
 
 				if [ ! -s "$password_file" ]; then
 					tmp_password="$password_file.tmp.$$"

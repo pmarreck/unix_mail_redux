@@ -33,4 +33,28 @@ describe("message review", function()
 			assert.are.equal(case.expected, review.confirmed(case.answer))
 		end
 	end)
+
+	it("extracts unfolded reply headers for human review", function()
+		local candidate = table.concat({
+			"From: validate@agents.home.arpa\r",
+			"To: unix_mail_redux@agents.home.arpa,\r",
+			" peter@agents.home.arpa\r",
+			"Subject: Re: Bound the scanner\r",
+			"In-Reply-To: <message@example>\r",
+			"\r",
+			"encoded MIME body not used for the concise preview\r",
+		}, "\n")
+		assert.same({
+			from = "validate@agents.home.arpa",
+			to = "unix_mail_redux@agents.home.arpa, peter@agents.home.arpa",
+			subject = "Re: Bound the scanner",
+			body = "The bounded test now passes.\n",
+		}, review.from_mime(candidate, "The bounded test now passes.\n"))
+	end)
+
+	it("rejects a malformed reply candidate", function()
+		assert.has_error(function()
+			review.from_mime("From: validate@agents.home.arpa\n\nbody", "reply")
+		end, "reply candidate is missing the To header")
+	end)
 end)

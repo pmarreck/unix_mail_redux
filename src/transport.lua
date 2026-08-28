@@ -31,7 +31,13 @@ end
 
 function M.read(config, mailbox, id, format)
 	return append(base(config, format), {
-		"message", "read", id, "--mailbox", mailbox, "--seen",
+		"message", "read", id, "--mailbox", mailbox,
+	})
+end
+
+function M.mark_seen(config, mailbox, id)
+	return append(base(config), {
+		"flag", "add", "--flag", "seen", id, "--mailbox", mailbox,
 	})
 end
 
@@ -47,6 +53,20 @@ function M.compose(config, from, to, subject, format)
 		"--subject", subject,
 		"--save", "Sent",
 		"--send",
+	})
+end
+
+function M.reply_candidate(config, mailbox, id, from, format)
+	return append(base(config, format), {
+		"message", "reply", id,
+		"--mailbox", mailbox,
+		"--from", from,
+	})
+end
+
+function M.send_candidate(config, format)
+	return append(base(config, format), {
+		"message", "send", "--save", "Sent",
 	})
 end
 

@@ -60,6 +60,7 @@
 					server-integration = import ./tests/nix/server_integration.nix {
 						inherit pkgs;
 						module = self.nixosModules.default;
+						package = postFor system;
 					};
 				});
 		};
