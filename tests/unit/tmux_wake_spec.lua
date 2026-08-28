@@ -18,6 +18,21 @@ describe("tmux wake adapter", function()
 		}, panes)
 	end)
 
+	it("matches a normalized mailbox to a mixed-case project directory", function()
+		local panes = tmux_wake.parse_panes(
+			"Einstein\t%1\tcodex\t/home/peter/Code\t0\n",
+			"code"
+		)
+		assert.same({
+			{
+				session = "Einstein",
+				pane = "%1",
+				command = "codex",
+				path = "/home/peter/Code",
+			},
+		}, panes)
+	end)
+
 	it("extracts the cursor row without depending on terminal dimensions", function()
 		assert.are.equal("❯ ", tmux_wake.cursor_line("header\nwork\n❯ \nstatus\n", 2))
 		assert.are.equal("› Ask Codex to do anything", tmux_wake.cursor_line(

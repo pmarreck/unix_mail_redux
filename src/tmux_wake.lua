@@ -1,4 +1,5 @@
 local wake = require("wake")
+local identity = require("identity")
 
 local M = {}
 
@@ -20,7 +21,7 @@ function M.parse_panes(output, project)
 			"^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$"
 		)
 		if session and dead == "0" and agent_commands[command]
-			and basename(path) == project
+			and identity.normalize(basename(path)) == identity.normalize(project)
 		then
 			table.insert(matches, {
 				session = session,
