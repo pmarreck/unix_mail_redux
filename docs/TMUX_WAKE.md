@@ -67,16 +67,24 @@ short-lived PTY client without carrying libghostty and its renderer.
 allocator. The helper:
 
 1. verifies that the selected project pane is still the active pane;
-2. verifies that its cursor row and input line still match the empty prompt
+2. refuses when any human client is already attached to the target session;
+3. verifies that its cursor row and input line still match the empty prompt
    observed by the watcher;
-3. attaches an `xterm-256color` tmux client with `ignore-size`, so the hidden
+4. attaches an `xterm-256color` tmux client with `ignore-size`, so the hidden
    client cannot resize Peter's session;
-4. rechecks the prompt after attachment;
-5. sends `FocusOut`, `FocusIn`, and the fixed wake message through that client;
-6. waits until the TUI renders the complete message;
-7. sends Return as a separate input write;
-8. waits for pane content to change, proving that the TUI processed Return;
-9. closes the PTY and verifies through tests that no client remains attached.
+5. rechecks the prompt after attachment;
+6. verifies that its short-lived client is still the session's only client;
+7. sends `FocusOut`, `FocusIn`, and the fixed wake message through that client;
+8. waits until the TUI renders the complete message;
+9. sends Return as a separate input write;
+10. waits for pane content to change, proving that the TUI processed Return;
+11. closes the PTY and verifies through tests that no client remains attached.
+
+The attached-client veto was added after a live 2026-09-02 collision. Peter
+was typing in an attached Codex session while two watcher retries began wake
+input and failed before submission. Prompt text alone was therefore too weak a
+gate: a human draft can race terminal rendering. Tmux's independent client
+attachment state now blocks unattended input before the helper sends any byte.
 
 The phase boundaries matter. A trace of an earlier draft showed Codex receiving
 `FocusOut + FocusIn + message + Return` in one `read(2)` call and ignoring
@@ -97,6 +105,7 @@ focused Return as `SUBMITTED`.
 a real tmux server:
 
 - direct `send-keys` reproduces the failure;
+- an attached human client vetoes the wake without changing the agent screen;
 - the PTY helper submits;
 - the expected focus transition occurred;
 - no hidden tmux client survives.

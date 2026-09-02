@@ -97,7 +97,15 @@ revalidate_prompt() {
 }
 
 revalidate_prompt || fail 'agent prompt changed before wake; refusing input'
-clients_before="$("${tmux_command[@]}" list-clients -t "$session" -F '#{client_name}' 2>/dev/null | sort || true)"
+
+session_clients() {
+	"${tmux_command[@]}" list-clients -t "$session" -F '#{client_name}' \
+		2>/dev/null | sort || true
+}
+
+clients_before="$(session_clients)"
+[[ -z $clients_before ]] || \
+	fail 'target session has another attached client; refusing input'
 
 wake_root="$(mktemp -d "${TMPDIR:-/tmp}/post-tmux-wake.XXXXXX")" || \
 	fail 'cannot create temporary PTY state'
@@ -130,9 +138,14 @@ script_pid=$!
 exec 7>"$input_fifo" || fail 'cannot open PTY input channel'
 
 client_ready=0
+wake_client=
 for _ in {1..200}; do
-	clients_now="$("${tmux_command[@]}" list-clients -t "$session" -F '#{client_name}' 2>/dev/null | sort || true)"
-	if [[ $clients_now != "$clients_before" ]]; then
+	clients_now="$(session_clients)"
+	if [[ -n $clients_now ]]; then
+		client_count="$(sed '/^$/d' <<<"$clients_now" | wc -l)"
+		(( client_count == 1 )) || \
+			fail 'another client attached while preparing wake; refusing input'
+		wake_client=$clients_now
 		client_ready=1
 		break
 	fi
@@ -142,6 +155,8 @@ done
 (( client_ready == 1 )) || fail 'tmux PTY client did not attach'
 
 revalidate_prompt || fail 'agent prompt changed while wake client attached; refusing input'
+[[ $(session_clients) == "$wake_client" ]] || \
+	fail 'another client attached while preparing wake; refusing input'
 # tmux initializes a new client as focused, but that automatic FocusIn may still
 # be queued behind input sent through another command client. Force a state
 # transition on this PTY, then let the application render the typed message

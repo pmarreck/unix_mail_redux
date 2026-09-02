@@ -1,5 +1,20 @@
 # UNIX MAIL REDUX plan
 
+- [x] Prevent wake injection whenever a human client is attached to the target
+      tmux session, and prove the gate before and after the helper attaches its
+      short-lived client.
+      - Reproduction: on 2026-09-02 at 17:47 EDT, Peter was typing in the
+        attached `Einstein` session when two wake attempts inserted text but
+        failed to submit; both exited with `agent did not echo the wake input`.
+      - Curiosity poke: a human can attach between any two checks, so the final
+        pre-input check must distinguish the helper's own client from every
+        other attached client without relying on timing.
+      Completed 2026-09-02 17:54 EDT: an integration test reproduced the
+      missing attached-client veto against a real tmux server, failed against
+      the prior helper, and now passes. The helper rejects pre-attached clients,
+      requires its PTY to be the sole client immediately before input, and
+      leaves the pane unchanged on rejection. All local and Nix flake checks
+      pass.
 - [x] Define the project identity, address, mailbox, CLI, and wake-state
       contracts as failing unit and CLI tests.
       - Curiosity poke: normalized project names can collide even when their

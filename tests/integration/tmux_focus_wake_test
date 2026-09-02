@@ -7,12 +7,24 @@ test_root="$(mktemp -d "${TMPDIR:-/tmp}/post-tmux-focus-test.XXXXXX")"
 tmux_socket="$test_root/tmux.sock"
 events_fifo="$test_root/events"
 session=focus-gate
+attached_session=attached-gate
+attached_events_fifo="$test_root/attached-events"
+human_input_fifo="$test_root/human-input"
+human_output="$test_root/human-output"
 helper="$project_root/bin/post-tmux-wake"
+human_client_pid=
 
 cleanup() {
+	exec 6>&- 2>/dev/null || true
+	if [[ -n $human_client_pid ]]; then
+		kill "$human_client_pid" 2>/dev/null || true
+		wait "$human_client_pid" 2>/dev/null || true
+	fi
 	tmux -S "$tmux_socket" kill-server 2>/dev/null || true
 	exec 8>&- 2>/dev/null || true
-	rm -f -- "$events_fifo"
+	exec 9>&- 2>/dev/null || true
+	rm -f -- "$events_fifo" "$attached_events_fifo" "$human_input_fifo" \
+		"$human_output" "$test_root/attached-rejection.err"
 	rmdir -- "$test_root" 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -34,6 +46,61 @@ exec 8<>"$events_fifo"
 tmux -S "$tmux_socket" new-session -d -s "$session" \
 	"luajit '$project_root/tests/fixtures/focus_gate.lua' '$events_fifo'"
 expect_event READY
+
+# A visible human client is an independent, mechanically observable veto. The
+# helper must refuse before sending focus, text, or Return into that session.
+mkfifo "$attached_events_fifo" "$human_input_fifo"
+exec 9<>"$attached_events_fifo"
+tmux -S "$tmux_socket" new-session -d -s "$attached_session" \
+	"luajit '$project_root/tests/fixtures/focus_gate.lua' '$attached_events_fifo'"
+IFS= read -r attached_ready <&9 || fail 'attached-client fixture did not start'
+[[ $attached_ready == READY ]] || fail "expected attached READY, got '$attached_ready'"
+: > "$human_output"
+TEST_TMUX_SOCKET=$tmux_socket TEST_TMUX_SESSION=$attached_session \
+	TERM=xterm-256color script -qefc \
+	'exec tmux -S "$TEST_TMUX_SOCKET" attach-session -f ignore-size -t "$TEST_TMUX_SESSION"' \
+	/dev/null < "$human_input_fifo" > "$human_output" 2>&1 &
+human_client_pid=$!
+exec 6>"$human_input_fifo"
+human_client_ready=0
+for _ in {1..200}; do
+	if [[ -n $(tmux -S "$tmux_socket" list-clients -t "$attached_session" \
+		-F '#{client_name}' 2>/dev/null) ]]; then
+		human_client_ready=1
+		break
+	fi
+	kill -0 "$human_client_pid" 2>/dev/null || fail 'human test client exited before attaching'
+	sleep 0.01
+done
+(( human_client_ready == 1 )) || fail 'human test client did not attach'
+
+attached_cursor_y="$(tmux -S "$tmux_socket" display-message -p \
+	-t "$attached_session" '#{cursor_y}')"
+attached_screen="$(tmux -S "$tmux_socket" capture-pane -p -t "$attached_session")"
+attached_cursor_line="$(sed -n "$((attached_cursor_y + 1))p" <<<"$attached_screen")"
+if "$helper" \
+	--tmux tmux \
+	--socket "$tmux_socket" \
+	--session "$attached_session" \
+	--pane "$(tmux -S "$tmux_socket" display-message -p -t "$attached_session" '#{pane_id}')" \
+	--expected-cursor-y "$attached_cursor_y" \
+	--expected-cursor-line "$attached_cursor_line" \
+	--message must-not-reach-attached-agent \
+	2> "$test_root/attached-rejection.err"
+then
+	fail 'wake helper accepted a session with an attached human client'
+fi
+grep -Fq 'target session has another attached client; refusing input' \
+	"$test_root/attached-rejection.err" || \
+	fail 'wake helper did not explain the attached-client veto'
+[[ $(tmux -S "$tmux_socket" capture-pane -p -t "$attached_session") == "$attached_screen" ]] || \
+	fail 'wake helper changed the agent screen before attached-client rejection'
+
+exec 6>&-
+kill "$human_client_pid" 2>/dev/null || true
+wait "$human_client_pid" 2>/dev/null || true
+human_client_pid=
+tmux -S "$tmux_socket" kill-session -t "$attached_session"
 
 # Reproduce the Codex failure: bytes and Return arrive, but a detached app that
 # requested focus events refuses to submit while it remains unfocused.
