@@ -77,10 +77,17 @@ from datetime import timedelta
 start_all()
 machine.wait_for_unit("postfix.service")
 machine.wait_for_unit("dovecot.service")
+machine.wait_for_open_port(143)
 machine.wait_for_open_port(465)
 machine.wait_for_open_port(993)
 
 password = machine.succeed("cat /home/operator/.config/post/password").strip()
+plain_imap = machine.succeed(
+    "curl --silent --show-error "
+    "--user operator:'" + password + "' "
+    "imap://127.0.0.1:143/ -X 'LIST \"\" \"*\"'"
+)
+assert "INBOX" in plain_imap
 send = (
     "swaks --server 127.0.0.1:465 --tls-on-connect "
     "--auth LOGIN --auth-user operator --auth-password='" + password + "' "

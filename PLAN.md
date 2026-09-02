@@ -1,5 +1,17 @@
 # UNIX MAIL REDUX plan
 
+- [x] Add a tailnet-only plaintext IMAP fallback on port 143 for iPhone Mail,
+      while retaining IMAPS 993 and SMTPS 465.
+      - Live reproduction: iPhone Mail repeatedly opened TCP/993 but sent no
+        TLS ClientHello, leaving both sides waiting until Dovecot timed out.
+        The same phone authenticated and sent successfully through SMTPS 465.
+      - Security boundary: port 143 must be admitted only on `tailscale0`;
+        plaintext IMAP credentials remain inside Tailscale's encrypted tunnel.
+      - Curiosity poke: prove plain authentication and continued IMAPS support
+        in the NixOS VM so the diagnostic path cannot silently replace TLS.
+      - Completed 2026-09-02 18:03 EDT. Module evaluation and the project test
+        suite pass; the NixOS VM exercises authenticated plain IMAP alongside
+        the retained IMAPS and SMTPS listeners.
 - [x] Prevent wake injection whenever a human client is attached to the target
       tmux session, and prove the gate before and after the helper attaches its
       short-lived client.

@@ -48,7 +48,7 @@ alias m=post
 
 ## Mail.app over Tailscale
 
-Configure a manual IMAP account with these values:
+The preferred configuration uses TLS for both directions:
 
 | Field | Value |
 |---|---|
@@ -59,8 +59,23 @@ Configure a manual IMAP account with these values:
 | Outgoing server | `thelio-nixos.tail66c90.ts.net`, SMTPS port 465 |
 | Transport security | TLS required |
 
-The server accepts connections only through Tailscale. Internet delivery and
-Internet relay are deliberately disabled.
+iPhone Mail has been observed opening TCP/993 without sending a TLS handshake,
+which leaves its refresh spinner waiting until the server times out. For that
+client, use this incoming-only compatibility configuration:
+
+| Field | Value |
+|---|---|
+| Incoming server | `thelio-nixos.tail66c90.ts.net` (no port suffix) |
+| Use SSL | Off |
+| Server port | 143 |
+| Authentication | Password |
+| IMAP path prefix | Blank |
+
+Keep the outgoing settings on SSL port 465. Port 143 is admitted only on the
+Thelio's Tailscale interface, so its unencrypted IMAP stream remains inside
+Tailscale's encrypted tunnel. Tailscale must be connected before refreshing.
+IMAPS on 993 remains available for clients that complete its TLS handshake.
+Internet delivery and Internet relay are deliberately disabled.
 
 Agent wakeups use a short-lived real tmux terminal client because Codex ignores
 Return while its pane is detached and unfocused. The measured cause, failed

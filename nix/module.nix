@@ -163,6 +163,9 @@ in
 		environment.systemPackages = [ cfg.package ];
 
 		networking.firewall.interfaces.${cfg.tailscaleInterface}.allowedTCPPorts = [
+			# Plain IMAP is a compatibility fallback inside Tailscale's encrypted
+			# tunnel. Do not admit this port on any non-tailnet interface.
+			143
 			465
 			993
 		];
@@ -221,7 +224,7 @@ in
 				mail_home = ownerHome;
 				mail_path = cfg.mailDirectory;
 				auth_username_format = "%{user | username}";
-				auth_allow_cleartext = false;
+				auth_allow_cleartext = true;
 				auth_mechanisms = [ "plain" "login" ];
 				recipient_delimiter = "+";
 				lmtp_save_to_detail_mailbox = true;
@@ -231,7 +234,7 @@ in
 					inbox = true;
 					separator = ".";
 				};
-				ssl = "required";
+				ssl = "yes";
 				ssl_server_cert_file = tlsCertificateFile;
 				ssl_server_key_file = tlsKeyFile;
 				"passdb passwd-file".passwd_file_path = authFile;
@@ -239,7 +242,7 @@ in
 				service = [
 					{
 						_section.name = "imap-login";
-						"inet_listener imap".port = 0;
+						"inet_listener imap".port = 143;
 						"inet_listener imaps" = {
 							port = 993;
 							ssl = true;
