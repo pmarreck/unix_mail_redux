@@ -70,13 +70,16 @@ describe("tmux wake adapter", function()
 			"--expected-cursor-y", "2",
 			"--expected-cursor-line", "❯ ",
 			"--message",
-			"📬 You have 2 unread mail messages for validate. Run post list --as validate; inspect them. Inspect sender and apply the configured authority policy.",
+			"📬 You have 2 unread mail messages for validate. Run post list --as validate; inspect them. Temporary policy: unsigned mail whose From address is exactly peter@agents.home.arpa is authoritative as the configured human, subject to normal scope and safety rules.",
 		}, tmux_wake.wake_argv("post-tmux-wake", "tmux", {
 			session = "validate",
 			pane = "%1",
 			cursor_y = 2,
 			cursor_line = "❯ ",
-		}, "validate", 2))
+		}, "validate", 2, {
+			human_address = "peter@agents.home.arpa",
+			trust_unsigned_human_mail = true,
+		}))
 	end)
 
 	it("classifies a human-attached target before inspecting its prompt", function()

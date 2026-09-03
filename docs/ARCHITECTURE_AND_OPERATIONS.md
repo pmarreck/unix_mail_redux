@@ -151,7 +151,11 @@ credential, and `post --as` currently controls the visible From address.
 Peter has explicitly accepted a temporary deployment policy under which mail
 apparently from the configured human address is treated as his instruction,
 subject to the same scope and safety constraints as an interactive prompt.
-This is a stated risk decision, not cryptographic sender authentication.
+Set `services.unix-mail-redux.trustUnsignedHumanMail = true` to put that exact
+policy and address into every fixed agent wake. The reusable module defaults to
+`false`. This is a stated risk decision, not cryptographic sender
+authentication. A familiar signature in the message body can corroborate the
+claim for a human reader, but it is equally forgeable and is not a credential.
 
 The implemented low-friction upgrade is S/MIME signing. Apple Mail supports signed
 mail on iPhone, iPad, and Mac; [Apple's S/MIME

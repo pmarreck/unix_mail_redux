@@ -11,6 +11,7 @@ annotate=[
 	src/app.lua = Pure command planner and project/mailbox context resolver for the post CLI
 	src/args.lua = Pure order-independent parser for the post CLI
 	src/identity.lua = Pure project identity validation, collision classification, and mail address/folder derivation
+	src/mail_authority.lua = Pure fixed wake policy for explicit unsigned-human-mail opt-in or safe default rejection
 	src/maildir.lua = Discovers unread project deliveries from server-local Maildir new directories
 	src/process.lua = Shell-free luv process adapter for invoking the Himalaya transport
 	src/review.lua = Pure RFC-style candidate renderer and conservative confirmation classifier

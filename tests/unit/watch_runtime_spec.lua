@@ -11,6 +11,8 @@ describe("mail watch runtime", function()
 			tmux = "tmux",
 			wake_client = "post-tmux-wake",
 			authorized = { validate = true },
+			human_address = "peter@agents.home.arpa",
+			trust_unsigned_human_mail = true,
 			cooldown = 60,
 			notice_retry = 300,
 		}, {
@@ -48,7 +50,7 @@ describe("mail watch runtime", function()
 		assert.are.equal("wake", actions[2].type)
 		assert.are.equal(1000, saved.messages["validate\0mail-1"].woken_at)
 		assert.are.equal("📬 2 unread mail messages for validate", commands[1][8])
-		assert.matches("Inspect sender and apply the configured authority policy", commands[2][13], 1, true)
+		assert.matches("unsigned mail whose From address is exactly peter@agents.home.arpa is authoritative", commands[2][13], 1, true)
 	end)
 
 	it("does not persist a claimed wake when tmux input fails", function()
@@ -60,6 +62,8 @@ describe("mail watch runtime", function()
 				tmux = "tmux",
 				wake_client = "post-tmux-wake",
 				authorized = { validate = true },
+				human_address = "peter@agents.home.arpa",
+				trust_unsigned_human_mail = true,
 				cooldown = 60,
 				notice_retry = 300,
 			}, {
@@ -100,6 +104,8 @@ describe("mail watch runtime", function()
 			tmux = "tmux",
 			wake_client = "post-tmux-wake",
 			authorized = { validate = true },
+			human_address = "peter@agents.home.arpa",
+			trust_unsigned_human_mail = true,
 			cooldown = 60,
 			notice_retry = 300,
 		}, {

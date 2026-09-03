@@ -61,6 +61,16 @@ in
 			description = "Address delivered to INBOX rather than a project mailbox.";
 		};
 
+		trustUnsignedHumanMail = lib.mkOption {
+			type = lib.types.bool;
+			default = false;
+			description = ''
+				Treat unsigned mail displaying the exact configured human address as
+				the human's instruction. This is forgeable by authenticated senders
+				and local processes with the shared credential.
+			'';
+		};
+
 		domain = lib.mkOption {
 			type = lib.types.str;
 			default = "agents.home.arpa";
@@ -379,9 +389,12 @@ in
 				"dovecot.service"
 				"unix-mail-redux-credentials.service"
 			];
-			environment = {
-				HOME = ownerHome;
-				POST_TMUX = lib.getExe pkgs.tmux;
+				environment = {
+					HOME = ownerHome;
+					POST_HUMAN_ADDRESS = "${cfg.humanLocalPart}@${cfg.domain}";
+					POST_TRUST_UNSIGNED_HUMAN_MAIL =
+						lib.boolToString cfg.trustUnsignedHumanMail;
+					POST_TMUX = lib.getExe pkgs.tmux;
 				POST_TMUX_WAKE = lib.getExe' cfg.package "post-tmux-wake";
 				POST_WAKE_PROJECTS = lib.concatStringsSep "," cfg.wakeProjects;
 				POST_WATCH_INTERVAL_SECONDS = toString cfg.watchIntervalSeconds;

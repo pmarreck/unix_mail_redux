@@ -1,5 +1,6 @@
 local wake = require("wake")
 local identity = require("identity")
+local mail_authority = require("mail_authority")
 
 local M = {}
 
@@ -117,15 +118,16 @@ function M.notify_argv(executable, target, project, count)
 	}
 end
 
-function M.wake_argv(wake_client, tmux, target, project, count)
+function M.wake_argv(wake_client, tmux, target, project, count, authority)
 	local message = string.format(
 		"📬 You have %d unread %s for %s. " ..
 		"Run post list --as %s; inspect them. " ..
-		"Inspect sender and apply the configured authority policy.",
+		"%s",
 		count,
 		mail_label(count),
 		project,
-		project
+		project,
+		mail_authority.instruction(authority)
 	)
 	return {
 		wake_client,

@@ -103,7 +103,11 @@ function M.run_once(config, dependencies)
 				config.tmux,
 				target,
 				action.project,
-				action.count
+				action.count,
+				{
+					human_address = config.human_address,
+					trust_unsigned_human_mail = config.trust_unsigned_human_mail,
+				}
 			)
 		end
 		if argv then

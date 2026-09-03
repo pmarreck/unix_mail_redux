@@ -100,7 +100,8 @@ emulator, and the agent TUI all see the fixed wake sentence as keyboard input.
 The safety case depends on admitting only a hard-coded sentence at a detached,
 revalidated empty prompt. Mail bodies are never injected. After reading a
 message, the agent inspects its sender and applies the deployment's documented
-authority policy. Cryptographically authenticated instructions remain planned.
+authority policy. Automated cryptographic authority remains disabled until the
+live Apple Mail S/MIME gate passes.
 
 The phase boundaries matter. A trace of an earlier draft showed Codex receiving
 `FocusOut + FocusIn + message + Return` in one `read(2)` call and ignoring
@@ -108,8 +109,11 @@ Return. Rendering the message before the separate Return gives the TUI an
 event-loop boundary without a guessed sleep.
 
 The helper refuses multiline or control-bearing messages. Mail content is
-never typed into the agent; the wake text only tells it to inspect its mailbox,
-inspect the sender, and apply the configured authority policy.
+never typed into the agent. When `trustUnsignedHumanMail` is enabled, the fixed
+wake names the exact configured human address and states that unsigned mail
+displaying that address is temporarily authoritative under normal scope and
+safety rules. Otherwise it states that mail grants no authority without
+independent sender authentication.
 
 As of Codex 0.153.0, this active terminal path is disabled for Codex. A live
 detached test on 2026-09-03 submitted the fixed text but then interrupted the

@@ -1,5 +1,19 @@
 # UNIX MAIL REDUX plan
 
+- [x] Provision Peter's explicitly accepted final-lap mail policy: an unsigned
+      message whose displayed `From` address is exactly
+      `peter@agents.home.arpa` is treated as Peter's instruction under the same
+      scope and safety limits as a live prompt. Put the exact address and risk
+      directly in the fixed wake text, derive it from the NixOS mail settings,
+      and leave signed-message enforcement deferred until after the launch push.
+      - Curiosity poke: the familiar iPhone signature is useful corroboration,
+        but requiring or trusting body text would add a forgeable shared secret
+        and make legitimate messages brittle.
+      - Completed 2026-09-03 16:38 EDT. The reusable NixOS module remains
+        safe-by-default and exposes an explicit opt-in. Peter's Thelio enables
+        it. Every fixed wake now states the exact trusted address and scope;
+        no message-body text is treated as authentication. Unit, CLI,
+        integration, package, module, and NixOS VM checks pass.
 - [x] Repair the detached Codex wake regression reproduced live on 2026-09-03:
       the fixed wake text reached `glob`'s input buffer, but the helper waited
       for an echo in its short-lived terminal transcript, never sent Return,

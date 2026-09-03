@@ -119,6 +119,10 @@ if parsed.verb == "watch" then
 	local watch_config = {
 		maildir = maildir,
 		state_file = state_file,
+		human_address = os.getenv("POST_HUMAN_ADDRESS")
+			or "peter@agents.home.arpa",
+		trust_unsigned_human_mail =
+			os.getenv("POST_TRUST_UNSIGNED_HUMAN_MAIL") == "true",
 		tmux = os.getenv("POST_TMUX") or "tmux",
 		wake_client = os.getenv("POST_TMUX_WAKE") or "post-tmux-wake",
 		authorized = authorized,
