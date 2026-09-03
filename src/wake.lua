@@ -41,13 +41,14 @@ function M.classify_pane(input)
 		return draft and trim(draft) == "" and "empty_prompt" or "busy"
 	end
 	if input.command == "codex" then
-		return cursor_line == "› Ask Codex to do anything"
-			-- Codex 0.153.0 accepted text through a temporary tmux client but
-			-- interrupted the conversation when that client detached. Keep
-			-- idle Codex sessions passive until its native queue/start API can
-			-- initiate a turn without sharing the terminal input stream.
-			and "idle_passive"
-			or "busy"
+		if cursor_line ~= "› Ask Codex to do anything" then
+			return "busy"
+		end
+		-- Codex 0.153.0 accepted text through a temporary tmux client but
+		-- interrupted the conversation when that client detached. Keep the
+		-- reusable default passive; a deployment must explicitly accept that
+		-- measured risk before using the terminal wake path.
+		return input.allow_codex_terminal_wake and "empty_prompt" or "idle_passive"
 	end
 
 	local draft = cursor_line:match("^│%s*❯(.-)%s*│$")

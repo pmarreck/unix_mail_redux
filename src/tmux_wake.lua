@@ -49,7 +49,8 @@ function M.cursor_line(screen, cursor_y)
 	return ""
 end
 
-function M.probe(runner, executable, project)
+function M.probe(runner, executable, project, options)
+	options = options or {}
 	local listed = runner({
 		executable,
 		"list-panes", "-a", "-F",
@@ -98,6 +99,7 @@ function M.probe(runner, executable, project)
 			command = pane.command,
 			cursor_line = cursor_line,
 			screen = captured.stdout,
+			allow_codex_terminal_wake = options.allow_codex_terminal_wake,
 		}),
 		session = pane.session,
 		pane = pane.pane,

@@ -131,11 +131,13 @@ directory basename or session name. Ambiguity causes no terminal input.
   fixed program-generated sentence telling the agent to inspect its mailbox.
 - Claude Code and Grok may be woken through a short-lived real tmux client only
   after the prompt and attachment gates pass.
-- Codex 0.153.0 is currently passive-only. A live detached test found that its
-  TUI could accept the wake text and then interrupt the conversation when the
-  temporary client detached. `codex queue` accepted a queued message but did
-  not start an idle turn in the tested local-writer topology. A native
-  app-server start event remains under investigation.
+- Codex 0.153.0 is passive by default. A live detached test found that its TUI
+  could accept the wake text and then interrupt the conversation when the
+  temporary client detached. A deployment may explicitly accept that risk
+  with `allowDetachedCodexWake = true`; prompt and attached-human gates still
+  apply. `codex queue` accepted a queued message but did not start an idle turn
+  in the tested local-writer topology. A native app-server start event remains
+  under investigation.
 
 The terminal protocol investigation and test design are documented in
 [TMUX_WAKE.md](TMUX_WAKE.md).
@@ -195,6 +197,8 @@ Add the repository as a flake input and import its module:
 						humanLocalPart = "operator";
 						tailscaleDomain = "mail-host.example-tailnet.ts.net";
 						wakeProjects = [ "*" ];
+						# Leave false unless the Codex interruption risk is accepted.
+						allowDetachedCodexWake = false;
 					};
 				})
 			];
@@ -207,7 +211,9 @@ The module installs `post`, configures local-only Postfix delivery and Dovecot,
 opens ports 143, 465, and 993 only on `tailscale0`, creates mutable state
 outside the Nix store, obtains a Tailscale TLS certificate, and checks renewal
 daily. `wakeProjects = [ ]` disables terminal wake authorization while keeping
-delivery and notices; `enableWatcher = false` disables the watcher entirely.
+delivery and notices. `allowDetachedCodexWake` defaults to false because the
+short-lived client has interrupted Codex 0.153.0 turns. `enableWatcher = false`
+disables the watcher entirely.
 
 The Tailscale account must permit `tailscale cert` for the configured MagicDNS
 name. Build and inspect the target system before switching it according to the

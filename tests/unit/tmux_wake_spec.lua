@@ -136,6 +136,34 @@ describe("tmux wake adapter", function()
 		}, calls[4])
 	end)
 
+	it("passes the detached Codex wake override into prompt classification", function()
+		local function runner(argv)
+			if argv[2] == "list-panes" then
+				return {
+					rc = 0,
+					stdout = "Einstein\t%1\tcodex\t/home/peter/Code\t0\n",
+					stderr = "",
+				}
+			elseif argv[2] == "list-clients" then
+				return { rc = 0, stdout = "", stderr = "" }
+			elseif argv[2] == "display-message" then
+				return { rc = 0, stdout = "2\n", stderr = "" }
+			end
+			return {
+				rc = 0,
+				stdout = "output\n\n› Ask Codex to do anything\nfooter\n",
+				stderr = "",
+			}
+		end
+
+		assert.are.equal("empty_prompt", tmux_wake.probe(
+			runner,
+			"tmux",
+			"einstein",
+			{ allow_codex_terminal_wake = true }
+		).state)
+	end)
+
 	it("defers when more than one agent pane owns the project", function()
 		local function runner(argv)
 			if argv[2] == "list-panes" then

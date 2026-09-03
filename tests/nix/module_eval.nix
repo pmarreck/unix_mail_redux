@@ -21,12 +21,14 @@ let
 					domain = "agents.home.arpa";
 					tailscaleDomain = "mail.example.ts.net";
 					trustUnsignedHumanMail = true;
+					allowDetachedCodexWake = true;
 					wakeProjects = [ "*" ];
 				};
 			}
 		];
 	};
 	cfg = evaluated.config;
+	options = evaluated.options;
 	mail = cfg.services.unix-mail-redux;
 in
 assert cfg.services.postfix.enable;
@@ -62,6 +64,9 @@ assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_HUMAN_ADDRESS
 	"peter@agents.home.arpa";
 assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_TRUST_UNSIGNED_HUMAN_MAIL ==
 	"true";
+assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_ALLOW_DETACHED_CODEX_WAKE ==
+	"true";
+assert options.services.unix-mail-redux.allowDetachedCodexWake.default == false;
 assert cfg.systemd.timers ? unix-mail-redux-tls;
 assert lib.hasInfix "peter@agents\\.home\\.arpa" cfg.services.postfix.virtual;
 assert lib.hasInfix "Agents.$1" cfg.services.postfix.virtual;

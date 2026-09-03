@@ -5,6 +5,7 @@ describe("mail watch runtime", function()
 		local order = {}
 		local saved
 		local commands = {}
+		local observed_probe_options
 		local actions = runtime.run_once({
 			maildir = "/mail",
 			state_file = "/state/watch.json",
@@ -13,6 +14,7 @@ describe("mail watch runtime", function()
 			authorized = { validate = true },
 			human_address = "peter@agents.home.arpa",
 			trust_unsigned_human_mail = true,
+			allow_codex_terminal_wake = true,
 			cooldown = 60,
 			notice_retry = 300,
 		}, {
@@ -23,7 +25,8 @@ describe("mail watch runtime", function()
 				}
 			end,
 			load = function() return { version = 1, messages = {}, last_wake = {} } end,
-			probe = function()
+			probe = function(_, _, options)
+				observed_probe_options = options
 				return {
 					state = "empty_prompt",
 					session = "validate",
@@ -51,6 +54,7 @@ describe("mail watch runtime", function()
 		assert.are.equal(1000, saved.messages["validate\0mail-1"].woken_at)
 		assert.are.equal("📬 2 unread mail messages for validate", commands[1][8])
 		assert.matches("unsigned mail whose From address is exactly peter@agents.home.arpa is authoritative", commands[2][13], 1, true)
+		assert.same({ allow_codex_terminal_wake = true }, observed_probe_options)
 	end)
 
 	it("does not persist a claimed wake when tmux input fails", function()

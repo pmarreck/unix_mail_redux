@@ -39,8 +39,8 @@ local function default_dependencies()
 		scan = maildir.scan,
 		load = watch_state.load,
 		save = watch_state.save,
-		probe = function(tmux, project)
-			return tmux_wake.probe(process.run, tmux, project)
+		probe = function(tmux, project, options)
+			return tmux_wake.probe(process.run, tmux, project, options)
 		end,
 		run = process.run,
 		now = os.time,
@@ -75,7 +75,9 @@ function M.run_once(config, dependencies)
 	local probes = {}
 	local terminal_states = {}
 	for _, project in ipairs(sorted_keys(projects)) do
-		local probe = deps.probe(config.tmux, project)
+		local probe = deps.probe(config.tmux, project, {
+			allow_codex_terminal_wake = config.allow_codex_terminal_wake,
+		})
 		probes[project] = probe
 		terminal_states[project] = probe.state
 	end

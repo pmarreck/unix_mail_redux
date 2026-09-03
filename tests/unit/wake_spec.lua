@@ -20,6 +20,15 @@ describe("wake policy", function()
 		}))
 	end)
 
+	it("allows an explicitly accepted detached Codex terminal wake", function()
+		assert.are.equal("empty_prompt", wake.classify_pane({
+			command = "codex",
+			cursor_line = "› Ask Codex to do anything",
+			screen = "",
+			allow_codex_terminal_wake = true,
+		}))
+	end)
+
 	it("classifies drafts and dialogs conservatively", function()
 		local cases = {
 			{

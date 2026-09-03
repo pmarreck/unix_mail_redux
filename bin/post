@@ -123,6 +123,8 @@ if parsed.verb == "watch" then
 			or "peter@agents.home.arpa",
 		trust_unsigned_human_mail =
 			os.getenv("POST_TRUST_UNSIGNED_HUMAN_MAIL") == "true",
+		allow_codex_terminal_wake =
+			os.getenv("POST_ALLOW_DETACHED_CODEX_WAKE") == "true",
 		tmux = os.getenv("POST_TMUX") or "tmux",
 		wake_client = os.getenv("POST_TMUX_WAKE") or "post-tmux-wake",
 		authorized = authorized,

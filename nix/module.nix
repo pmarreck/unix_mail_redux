@@ -134,6 +134,16 @@ in
 			description = "Projects authorized for empty-prompt wake input; * authorizes all projects.";
 		};
 
+		allowDetachedCodexWake = lib.mkOption {
+			type = lib.types.bool;
+			default = false;
+			description = ''
+				Allow the short-lived PTY terminal path to wake detached Codex
+				sessions. Codex 0.153.0 may interrupt the started turn when that
+				client detaches, so deployments must accept this measured risk.
+			'';
+		};
+
 		watchIntervalSeconds = lib.mkOption {
 			type = lib.types.ints.positive;
 			default = 2;
@@ -394,6 +404,8 @@ in
 					POST_HUMAN_ADDRESS = "${cfg.humanLocalPart}@${cfg.domain}";
 					POST_TRUST_UNSIGNED_HUMAN_MAIL =
 						lib.boolToString cfg.trustUnsignedHumanMail;
+					POST_ALLOW_DETACHED_CODEX_WAKE =
+						lib.boolToString cfg.allowDetachedCodexWake;
 					POST_TMUX = lib.getExe pkgs.tmux;
 				POST_TMUX_WAKE = lib.getExe' cfg.package "post-tmux-wake";
 				POST_WAKE_PROJECTS = lib.concatStringsSep "," cfg.wakeProjects;

@@ -115,11 +115,12 @@ displaying that address is temporarily authoritative under normal scope and
 safety rules. Otherwise it states that mail grants no authority without
 independent sender authentication.
 
-As of Codex 0.153.0, this active terminal path is disabled for Codex. A live
-detached test on 2026-09-03 submitted the fixed text but then interrupted the
-Codex conversation when the short-lived client detached. The watcher gives an
-idle Codex pane a passive notice until a native app-server start event is
-proved. Claude Code and Grok retain the gated terminal path.
+Codex 0.153.0 is passive by default. A live detached test on 2026-09-03
+submitted the fixed text but then interrupted the Codex conversation when the
+short-lived client detached. A deployment may set `allowDetachedCodexWake`
+only after accepting that measured risk. The prompt and attached-human gates
+remain mandatory. Claude Code and Grok use the gated terminal path without
+that extra opt-in.
 
 ## Regression controls
 

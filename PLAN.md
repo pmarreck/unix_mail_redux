@@ -1,5 +1,15 @@
 # UNIX MAIL REDUX plan
 
+- [ ] Add an explicit, safe-by-default deployment option that permits the
+      tested PTY wake path for detached Codex sessions. Peter accepted the
+      measured Codex interruption risk by email on 2026-09-03 because reliable
+      mail wake is required during the launch push; enable the option only on
+      his Thelio, preserve the attached-human veto, and prove the default and
+      opt-in behaviors separately before a live detached test.
+      - Curiosity poke: the prior failure was more serious than overwriting an
+        unfinished command. Codex submitted the fixed wake and then interrupted
+        the conversation when the temporary client detached, so the live proof
+        must establish that a mail-triggered turn survives client detachment.
 - [x] Provision Peter's explicitly accepted final-lap mail policy: an unsigned
       message whose displayed `From` address is exactly
       `peter@agents.home.arpa` is treated as Peter's instruction under the same
