@@ -1,5 +1,20 @@
 # UNIX MAIL REDUX plan
 
+- [ ] Investigate a harness-native, fixed-content wake event that can trigger
+      an agent without entering the same terminal input stream as Peter's
+      typing. Start with Codex app-server; retain passive notification and
+      deferred wake after the last client detaches as the safe fallback.
+      - Curiosity poke: an API method named `turn/start` may still create an
+        ordinary user-role prompt rather than a separately authenticated event;
+        inspect provenance and concurrent-turn behavior before calling it safe.
+- [ ] After live-prompt confirmation, implement the design improvements Peter
+      approved by email on 2026-09-02: explicit recipient namespaces, a durable
+      agent/session registry, fixed sender-independent wake events, message
+      delivery/notice/read/reply/defer tracing, Markdown multipart mail, and a
+      diagnostics/dead-letter mailbox. Keep signed action directives deferred.
+      - Curiosity poke: mail content currently grants no execution authority,
+        so approval received through mail is recorded as context rather than
+        authorization to mutate the system.
 - [ ] Publish one cohesive, shareable architecture and operations guide after
       the remaining live mail contracts are proved. Link it prominently from
       the README and distinguish measured behavior from planned features.
