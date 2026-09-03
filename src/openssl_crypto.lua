@@ -15,9 +15,15 @@ ffi.cdef([[
 	typedef struct X509_extension_st X509_EXTENSION;
 	typedef struct asn1_string_st ASN1_INTEGER;
 	typedef struct asn1_string_st ASN1_TIME;
+	typedef struct asn1_string_st ASN1_STRING;
+	typedef struct asn1_string_st ASN1_OCTET_STRING;
 	typedef struct bignum_st BIGNUM;
 	typedef struct pkcs12_st PKCS12;
 	typedef struct stack_st OPENSSL_STACK;
+	typedef struct x509_store_st X509_STORE;
+	typedef struct X509_VERIFY_PARAM_st X509_VERIFY_PARAM;
+	typedef struct CMS_ContentInfo_st CMS_ContentInfo;
+	typedef struct CMS_SignerInfo_st CMS_SignerInfo;
 	typedef struct X509V3_CONF_METHOD_st X509V3_CONF_METHOD;
 	typedef struct v3_ext_ctx {
 		int flags;
@@ -101,6 +107,30 @@ ffi.cdef([[
 		int key_type);
 	void PKCS12_free(PKCS12 *pkcs12);
 	int i2d_PKCS12_bio(BIO *bio, const PKCS12 *pkcs12);
+
+	CMS_ContentInfo *SMIME_read_CMS(BIO *bio, BIO **detached_content);
+	void CMS_ContentInfo_free(CMS_ContentInfo *cms);
+	OPENSSL_STACK *CMS_get0_SignerInfos(CMS_ContentInfo *cms);
+	OPENSSL_STACK *CMS_get0_signers(CMS_ContentInfo *cms);
+	ASN1_OCTET_STRING *CMS_SignerInfo_get0_signature(CMS_SignerInfo *signer);
+	int CMS_verify(CMS_ContentInfo *cms, OPENSSL_STACK *certificates,
+		X509_STORE *store, BIO *detached_content, BIO *output,
+		unsigned int flags);
+	X509_STORE *X509_STORE_new(void);
+	void X509_STORE_free(X509_STORE *store);
+	int X509_STORE_add_cert(X509_STORE *store, X509 *certificate);
+	X509_VERIFY_PARAM *X509_STORE_get0_param(const X509_STORE *store);
+	int X509_VERIFY_PARAM_set_flags(X509_VERIFY_PARAM *parameters,
+		unsigned long flags);
+	void X509_VERIFY_PARAM_set_time(X509_VERIFY_PARAM *parameters, long time);
+	int X509_check_email(X509 *certificate, const char *email, size_t length,
+		unsigned int flags);
+	int OPENSSL_sk_num(const OPENSSL_STACK *stack);
+	void *OPENSSL_sk_value(const OPENSSL_STACK *stack, int index);
+	int ASN1_STRING_length(const ASN1_STRING *string);
+	const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *string);
+	int EVP_Digest(const void *data, size_t length, unsigned char *digest,
+		unsigned int *digest_length, const EVP_MD *type, void *implementation);
 ]])
 
 local path = os.getenv("POST_LIBCRYPTO")
@@ -113,6 +143,7 @@ local M = {}
 local X509_VERSION_3 = 2
 local MBSTRING_UTF8 = 0x1000
 local MBSTRING_ASC = 0x1001
+local X509_V_FLAG_X509_STRICT = 0x20
 
 local function openssl_error(context)
 	local messages = {}
@@ -311,6 +342,21 @@ local function read_private_key(contents, passphrase)
 	return owned(key, crypto.EVP_PKEY_free, "could not decrypt the CA private key")
 end
 
+local function sha256_hex(contents, length)
+	local digest = ffi.new("unsigned char[32]")
+	local digest_length = ffi.new("unsigned int[1]")
+	require_one(crypto.EVP_Digest(contents, length, digest, digest_length,
+		crypto.EVP_sha256(), nil), "could not hash the S/MIME signature")
+	if digest_length[0] ~= 32 then
+		error("OpenSSL returned an invalid SHA-256 digest length", 0)
+	end
+	local bytes = {}
+	for index = 0, 31 do
+		bytes[index + 1] = string.format("%02x", tonumber(digest[index]))
+	end
+	return table.concat(bytes)
+end
+
 function M.library_path()
 	return path
 end
@@ -394,6 +440,74 @@ function M.issue_identity(options)
 	return {
 		pkcs12_der = bio_contents(bio),
 		certificate_pem = certificate_pem(identity_certificate),
+	}
+end
+
+function M.verify_smime(options)
+	options = options or {}
+	local message = require_text(options.message, "S/MIME message")
+	local root_pem = require_text(options.ca_certificate_pem,
+		"trusted CA certificate")
+	local email = policy.require_email(options.email)
+	if type(options.at) ~= "number" or options.at ~= math.floor(options.at) then
+		error("S/MIME verification time must be a whole-number Unix timestamp", 0)
+	end
+
+	crypto.ERR_clear_error()
+	local input = input_bio(message)
+	local detached_output = ffi.new("BIO *[1]")
+	local cms_pointer = crypto.SMIME_read_CMS(input, detached_output)
+	if cms_pointer == nil then
+		while crypto.ERR_get_error() ~= 0 do end
+		error("invalid S/MIME message", 0)
+	end
+	local cms = ffi.gc(cms_pointer, crypto.CMS_ContentInfo_free)
+	local detached = detached_output[0]
+	if detached ~= nil then
+		detached = ffi.gc(detached, crypto.BIO_free)
+	end
+
+	local signer_infos = crypto.CMS_get0_SignerInfos(cms)
+	if signer_infos == nil or crypto.OPENSSL_sk_num(signer_infos) ~= 1 then
+		error("S/MIME message must contain exactly one signer", 0)
+	end
+	local root = read_certificate(root_pem)
+	local store = owned(crypto.X509_STORE_new(), crypto.X509_STORE_free,
+		"could not allocate the private S/MIME trust store")
+	require_one(crypto.X509_STORE_add_cert(store, root),
+		"could not add the private S/MIME root to the trust store")
+	local parameters = require_pointer(crypto.X509_STORE_get0_param(store),
+		"could not access S/MIME verification parameters")
+	require_one(crypto.X509_VERIFY_PARAM_set_flags(parameters,
+		X509_V_FLAG_X509_STRICT), "could not enable strict X.509 verification")
+	crypto.X509_VERIFY_PARAM_set_time(parameters, options.at)
+
+	local output = new_memory_bio()
+	if crypto.CMS_verify(cms, nil, store, detached, output, 0) ~= 1 then
+		while crypto.ERR_get_error() ~= 0 do end
+		error("S/MIME signature or certificate verification failed", 0)
+	end
+	local signers = owned(crypto.CMS_get0_signers(cms), crypto.OPENSSL_sk_free,
+		"could not resolve the verified S/MIME signer")
+	if crypto.OPENSSL_sk_num(signers) ~= 1 then
+		error("S/MIME message must contain exactly one signer", 0)
+	end
+	local signer = ffi.cast("X509 *", crypto.OPENSSL_sk_value(signers, 0))
+	if signer == nil or crypto.X509_check_email(signer, email, #email, 0) ~= 1 then
+		error("S/MIME signer does not match expected email: " .. email, 0)
+	end
+
+	local signer_info = ffi.cast("CMS_SignerInfo *",
+		crypto.OPENSSL_sk_value(signer_infos, 0))
+	local signature = require_pointer(crypto.CMS_SignerInfo_get0_signature(signer_info),
+		"could not read the S/MIME signature")
+	local signature_length = crypto.ASN1_STRING_length(signature)
+	local signature_bytes = require_pointer(crypto.ASN1_STRING_get0_data(signature),
+		"could not read the S/MIME signature bytes")
+	return {
+		content = bio_contents(output),
+		replay_key = "sha256:" .. sha256_hex(signature_bytes, signature_length),
+		signer_email = email,
 	}
 end
 
