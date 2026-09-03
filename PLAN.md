@@ -1,5 +1,19 @@
 # UNIX MAIL REDUX plan
 
+- [ ] Publish one cohesive, shareable architecture and operations guide after
+      the remaining live mail contracts are proved. Link it prominently from
+      the README and distinguish measured behavior from planned features.
+      - Cover goals and non-goals; Postfix, LMTP, Maildir, Dovecot, Himalaya,
+        `post`, watcher, tmux, Tailscale, certificate and credential lifecycle;
+        address namespaces; trust and execution-authority boundaries; NixOS
+        installation; iPhone/Mail.app and generic client setup; CLI and agent
+        workflows; observability; backup/recovery; troubleshooting; tests/CI;
+        portability; limitations; and the roadmap.
+      - Include a compact architecture diagram and copy-pasteable setup and
+        diagnostic commands without Peter-specific secrets or private state.
+      - Curiosity poke: a public guide must not imply that terminal wake input
+        has cryptographic provenance or that plain IMAP is Internet-safe merely
+        because this deployment restricts it to an encrypted tailnet.
 - [ ] Add opt-in Markdown composition as a standards-compliant
       `multipart/alternative` message: retain the Markdown source as the
       `text/plain` fallback and add a restricted, sanitized `text/html` part
