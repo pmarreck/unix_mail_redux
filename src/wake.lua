@@ -7,6 +7,7 @@ local state_actions = {
 	dialog = "defer",
 	crashed = "notify",
 	empty_prompt = "wake",
+	idle_passive = "notify",
 }
 
 local agent_commands = {
@@ -41,7 +42,11 @@ function M.classify_pane(input)
 	end
 	if input.command == "codex" then
 		return cursor_line == "› Ask Codex to do anything"
-			and "empty_prompt"
+			-- Codex 0.153.0 accepted text through a temporary tmux client but
+			-- interrupted the conversation when that client detached. Keep
+			-- idle Codex sessions passive until its native queue/start API can
+			-- initiate a turn without sharing the terminal input stream.
+			and "idle_passive"
 			or "busy"
 	end
 

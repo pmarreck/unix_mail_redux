@@ -1,5 +1,23 @@
 # UNIX MAIL REDUX plan
 
+- [x] Repair the detached Codex wake regression reproduced live on 2026-09-03:
+      the fixed wake text reached `glob`'s input buffer, but the helper waited
+      for an echo in its short-lived terminal transcript, never sent Return,
+      and exited fatally. Preserve this as a deterministic failing integration
+      test, make target-pane observation authoritative, prevent watcher restart
+      loops for uncertain submission outcomes, and repeat the live detached
+      test before calling it fixed.
+      - Curiosity poke: an apparent pane redraw proves text visibility, not
+        accepted submission; success must require a separately observable
+        transition out of the prompt.
+      - Completed 2026-09-03 09:18 EDT. A RED integration fixture now removes
+        the helper-client transcript and hard-wraps the shared pane. The helper
+        observes normalized target-pane output and returns safe deferral status
+        for uncertain outcomes. The live retry submitted, then Codex 0.153.0
+        interrupted its conversation; the exact `glob` conversation was
+        restored and its draft cleared through a real attached client. Codex
+        is now passive-only, while Claude and Grok retain active wake. The full
+        suite and NixOS VM pass.
 - [ ] Investigate a harness-native, fixed-content wake event that can trigger
       an agent without entering the same terminal input stream as Peter's
       typing. Start with Codex app-server; retain passive notification and
@@ -7,15 +25,39 @@
       - Curiosity poke: an API method named `turn/start` may still create an
         ordinary user-role prompt rather than a separately authenticated event;
         inspect provenance and concurrent-turn behavior before calling it safe.
-- [ ] After live-prompt confirmation, implement the design improvements Peter
-      approved by email on 2026-09-02: explicit recipient namespaces, a durable
+- [ ] Implement the design improvements Peter approved by email on 2026-09-02
+      and confirmed in the live prompt on 2026-09-03: explicit recipient
+      namespaces, a durable
       agent/session registry, fixed sender-independent wake events, message
       delivery/notice/read/reply/defer tracing, Markdown multipart mail, and a
       diagnostics/dead-letter mailbox. Keep signed action directives deferred.
-      - Curiosity poke: mail content currently grants no execution authority,
-        so approval received through mail is recorded as context rather than
-        authorization to mutate the system.
-- [ ] Publish one cohesive, shareable architecture and operations guide after
+      - Temporary authority policy accepted by Peter on 2026-09-03: treat mail
+        apparently sent by the configured human address as Peter's instruction,
+        subject to the same scope and safety rules as a live prompt. Document
+        that the present shared host credential and unrestricted local agents
+        make this
+        sender identity forgeable; this is accepted operational risk, not an
+        MFIC-grade authentication claim.
+      - Curiosity poke: bind future authorization decisions to a server-stamped
+        authenticated identity rather than trusting a caller-controlled From
+        header.
+- [ ] Design the easiest standards-compatible way for Peter to digitally sign
+      instructions from Apple Mail on macOS and iPhone, then verify signatures
+      mechanically before granting stronger authority. Prefer native S/MIME if
+      its certificate lifecycle and mobile compose flow remain tolerable;
+      compare it with PGP/MIME and a small signed-directive attachment.
+      - Curiosity poke: a signing key stored where unrestricted agents can read
+        it proves nothing; the private key needs Secure Enclave, hardware-token,
+        or offline custody while verification remains unattended.
+- [ ] Red-team the accepted temporary mail-authority model in an isolated test
+      deployment: sender-header spoofing, shared-account submission, direct
+      Maildir mutation, replay, alias ambiguity, and compromised local-agent
+      paths. Record which attacks are prevented, detected, or accepted without
+      using production credentials or mailboxes.
+      - Curiosity poke: Tailscale authenticates devices and encrypts transport;
+        it does not distinguish Peter from an unrestricted agent on the same
+        trusted host.
+- [x] Publish one cohesive, shareable architecture and operations guide after
       the remaining live mail contracts are proved. Link it prominently from
       the README and distinguish measured behavior from planned features.
       - Cover goals and non-goals; Postfix, LMTP, Maildir, Dovecot, Himalaya,
@@ -29,6 +71,11 @@
       - Curiosity poke: a public guide must not imply that terminal wake input
         has cryptographic provenance or that plain IMAP is Internet-safe merely
         because this deployment restricts it to an encrypted tailnet.
+      - Completed 2026-09-03 09:18 EDT. README now answers which command-line
+        mail program is used and why `home.arpa` is appropriate. The linked
+        guide covers the measured architecture, NixOS installation, Apple Mail,
+        CLI use, operational diagnostics, state, tests, trust limits, the
+        temporary authority policy, S/MIME proposal, and unshipped roadmap.
 - [ ] Add opt-in Markdown composition as a standards-compliant
       `multipart/alternative` message: retain the Markdown source as the
       `text/plain` fallback and add a restricted, sanitized `text/html` part
@@ -138,8 +185,12 @@
       Completed 2026-08-28 09:04 EDT: the live Thelio stack passed authenticated
       SMTP, LMTP, Maildir, IMAP, installed-CLI retrieval, and tmux watcher
       proofs after three RED/GREEN deployment defects were repaired.
-- [ ] Connect Mail.app over Tailscale and add a shell-level `You have new mail.`
-      notice; the operator guide and underlying IMAPS/SMTPS endpoints are live.
+- [x] Connect Mail.app over Tailscale and add a shell-level `You have new mail.`
+      notice.
+      Completed 2026-09-03 09:18 EDT: iPhone Mail exchanges messages in both
+      directions through the tailnet-only IMAP 143 compatibility listener and
+      SMTPS 465. Shell/harness notices are live; active Codex wake is tracked
+      separately because the 0.153.0 TUI interrupted under terminal injection.
 - [x] Replace direct tmux wake injection with a controllable terminal client
       attached to the target session, then prove Codex submission and retain
       Claude Code and Grok as live follow-up checks.

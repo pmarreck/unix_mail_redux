@@ -5,6 +5,15 @@
 Deliciously retro mail plumbing with a small modern interface for humans and
 agents. The repository name is never part of normal use: its CLI is `post`.
 
+The command-line client is the LuaJIT `post` interface over
+[Himalaya](https://pimalaya.org/himalaya/); Postfix and Dovecot provide standard
+SMTP, LMTP, Maildir, and IMAP. `agents.home.arpa` uses the private-network domain
+reserved by [RFC 8375](https://www.rfc-editor.org/rfc/rfc8375.html), matching a
+service that exists only inside a tailnet.
+
+See the [complete architecture, setup, usage, security, and operations
+guide](docs/ARCHITECTURE_AND_OPERATIONS.md).
+
 ## Try it
 
 The NixOS server module must be active first. On Peter's Thelio, apply its

@@ -2,6 +2,7 @@
 ver=1.2
 annotate=[
 	bin/post = LuaJIT human/agent mail CLI entry point
+	docs/ARCHITECTURE_AND_OPERATIONS.md = Public architecture, setup, usage, security, and operations guide
 	docs/TMUX_WAKE.md = Measured explanation of why Codex mail wakeups require a focused PTY terminal client
 	flake.nix = Pinned LuaJIT/Himalaya development environment and future package/module outputs
 	nix/module.nix = Reusable NixOS module for tailnet-only Postfix, Dovecot, credentials, TLS, and Maildir

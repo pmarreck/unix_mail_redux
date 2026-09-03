@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -u
+
+# Model a real terminal client whose input reaches tmux while its renderer does
+# not mirror typed input into script(1)'s captured stdout.
+exec script "$@" > /dev/null

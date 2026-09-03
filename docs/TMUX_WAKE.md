@@ -98,10 +98,9 @@ the watcher so systemd can restart a genuinely broken process.
 This does not give terminal input cryptographic provenance. Tmux, a terminal
 emulator, and the agent TUI all see the fixed wake sentence as keyboard input.
 The safety case depends on admitting only a hard-coded sentence at a detached,
-revalidated empty prompt. Mail bodies are never injected. They remain untrusted
-data after the agent reads them, and cannot grant execution authority. A fully
-separate trusted wake channel requires support from each agent harness or a
-verified signed-directive gate outside the model.
+revalidated empty prompt. Mail bodies are never injected. After reading a
+message, the agent inspects its sender and applies the deployment's documented
+authority policy. Cryptographically authenticated instructions remain planned.
 
 The phase boundaries matter. A trace of an earlier draft showed Codex receiving
 `FocusOut + FocusIn + message + Return` in one `read(2)` call and ignoring
@@ -109,8 +108,14 @@ Return. Rendering the message before the separate Return gives the TUI an
 event-loop boundary without a guessed sleep.
 
 The helper refuses multiline or control-bearing messages. Mail content is
-never typed into the agent; the wake text only tells it to inspect its mailbox
-and repeats that mail grants no execution authority.
+never typed into the agent; the wake text only tells it to inspect its mailbox,
+inspect the sender, and apply the configured authority policy.
+
+As of Codex 0.153.0, this active terminal path is disabled for Codex. A live
+detached test on 2026-09-03 submitted the fixed text but then interrupted the
+Codex conversation when the short-lived client detached. The watcher gives an
+idle Codex pane a passive notice until a native app-server start event is
+proved. Claude Code and Grok retain the gated terminal path.
 
 ## Regression controls
 

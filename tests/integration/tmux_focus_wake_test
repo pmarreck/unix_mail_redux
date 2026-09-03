@@ -44,7 +44,7 @@ expect_event() {
 mkfifo "$events_fifo"
 exec 8<>"$events_fifo"
 tmux -S "$tmux_socket" new-session -d -s "$session" \
-	"luajit '$project_root/tests/fixtures/focus_gate.lua' '$events_fifo'"
+	"luajit '$project_root/tests/fixtures/focus_gate.lua' '$events_fifo' 10"
 expect_event READY
 
 # A visible human client is an independent, mechanically observable veto. The
@@ -115,6 +115,7 @@ cursor_y="$(tmux -S "$tmux_socket" display-message -p -t "$session" '#{cursor_y}
 screen="$(tmux -S "$tmux_socket" capture-pane -p -t "$session")"
 cursor_line="$(sed -n "$((cursor_y + 1))p" <<<"$screen")"
 
+POST_TMUX_SCRIPT="$project_root/tests/fixtures/script_without_transcript" \
 "$helper" \
 	--tmux tmux \
 	--socket "$tmux_socket" \

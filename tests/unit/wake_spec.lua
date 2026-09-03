@@ -4,13 +4,20 @@ describe("wake policy", function()
 	it("recognizes empty prompts for the supported agent TUIs", function()
 		local cases = {
 			{ command = "claude", cursor_line = "❯   ", screen = "" },
-			{ command = "codex", cursor_line = "› Ask Codex to do anything", screen = "" },
 			{ command = "grok", cursor_line = " │ ❯                                      │ ", screen = "" },
 		}
 
 		for _, case in ipairs(cases) do
 			assert.are.equal("empty_prompt", wake.classify_pane(case), case.command)
 		end
+	end)
+
+	it("keeps an idle Codex prompt passive until a native wake can start a turn", function()
+		assert.are.equal("idle_passive", wake.classify_pane({
+			command = "codex",
+			cursor_line = "› Ask Codex to do anything",
+			screen = "",
+		}))
 	end)
 
 	it("classifies drafts and dialogs conservatively", function()
@@ -51,6 +58,7 @@ describe("wake policy", function()
 			{ state = "absent", action = "defer" },
 			{ state = "attached", action = "notify" },
 			{ state = "busy", action = "notify" },
+			{ state = "idle_passive", action = "notify" },
 			{ state = "dialog", action = "defer" },
 			{ state = "crashed", action = "notify" },
 			{ state = "empty_prompt", action = "wake" },

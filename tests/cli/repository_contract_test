@@ -19,6 +19,17 @@ if [ "$actual_badge" != "$expected_badge" ]; then
 	failures=$((failures + 1))
 fi
 
+guide="$project_root/docs/ARCHITECTURE_AND_OPERATIONS.md"
+if [ ! -f "$guide" ]; then
+	printf 'FAIL public architecture and operations guide is missing\n' >&2
+	failures=$((failures + 1))
+fi
+
+if ! grep -Fq 'docs/ARCHITECTURE_AND_OPERATIONS.md' "$project_root/README.md"; then
+	printf 'FAIL README does not link the public architecture and operations guide\n' >&2
+	failures=$((failures + 1))
+fi
+
 if (( failures > 0 )); then
 	exit "$failures"
 fi

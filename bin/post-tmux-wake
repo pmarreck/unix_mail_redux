@@ -165,15 +165,25 @@ revalidate_prompt || fail 'agent prompt changed while wake client attached; refu
 printf '\033[O\033[I%s' "$message" >&7 || fail 'cannot write wake input to PTY client'
 
 message_visible=0
+compact_message="$(printf '%s' "$message" | LC_ALL=C tr -d '[:space:]')"
 for _ in {1..200}; do
-	if grep -aFq -- "$message" "$terminal_output"; then
-		message_visible=1
-		break
-	fi
+	# The short-lived client transcript is not authoritative. Real agent TUIs
+	# can render input into the shared pane without echoing it back through the
+	# helper client's stdout. Join wrapped pane lines before matching because a
+	# long fixed wake sentence commonly spans several terminal rows.
+	pane_screen="$("${tmux_command[@]}" capture-pane -p -J -t "$pane")" || \
+		fail 'cannot capture agent screen while confirming wake input'
+	compact_pane_screen="$(printf '%s' "$pane_screen" | LC_ALL=C tr -d '[:space:]')"
+	case $compact_pane_screen in
+		*"$compact_message"*)
+			message_visible=1
+			break
+			;;
+	esac
 	kill -0 "$script_pid" 2>/dev/null || fail 'tmux PTY client exited before confirming wake input'
 	sleep 0.01
 done
-(( message_visible == 1 )) || fail 'agent did not echo the wake input'
+(( message_visible == 1 )) || fail 'agent did not render the wake input' 75
 
 screen_before_return="$("${tmux_command[@]}" capture-pane -p -t "$pane")" || \
 	fail 'cannot capture agent screen before Return'
@@ -189,6 +199,6 @@ for _ in {1..200}; do
 	kill -0 "$script_pid" 2>/dev/null || fail 'tmux PTY client exited before confirming Return'
 	sleep 0.01
 done
-(( return_observed == 1 )) || fail 'agent did not redraw after Return'
+(( return_observed == 1 )) || fail 'agent did not redraw after Return' 75
 
 exit 0
