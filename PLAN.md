@@ -10,6 +10,10 @@
         unfinished command. Codex submitted the fixed wake and then interrupted
         the conversation when the temporary client detached, so the live proof
         must establish that a mail-triggered turn survives client detachment.
+      - Implementation and activation completed 2026-09-03 17:33 EDT. Unit,
+        integration, CLI, repository, Nix module, and NixOS VM checks pass; the
+        Thelio watcher exposes the opt-in as true. Peter was emailed a request
+        for one new message while detached, which remains the end-to-end gate.
 - [x] Provision Peter's explicitly accepted final-lap mail policy: an unsigned
       message whose displayed `From` address is exactly
       `peter@agents.home.arpa` is treated as Peter's instruction under the same
