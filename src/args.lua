@@ -7,6 +7,7 @@ local verbs = {
 	to = true,
 	status = true,
 	watch = true,
+	smime = true,
 }
 
 local function require_value(argv, index, option, description)
@@ -52,6 +53,27 @@ function M.parse(argv)
 		elseif value == "--state-file" then
 			result.state_file = require_value(argv, index, value, "a path")
 			index = index + 1
+		elseif value == "--out" then
+			result.output = require_value(argv, index, value, "a path")
+			index = index + 1
+		elseif value == "--passphrase-file" then
+			result.passphrase_file = require_value(argv, index, value, "a path or -")
+			index = index + 1
+		elseif value == "--ca" then
+			result.ca = require_value(argv, index, value, "a path")
+			index = index + 1
+		elseif value == "--email" then
+			result.email = require_value(argv, index, value, "an address")
+			index = index + 1
+		elseif value == "--name" then
+			result.name = require_value(argv, index, value, "a label")
+			index = index + 1
+		elseif value == "--ca-passphrase-file" then
+			result.ca_passphrase_file = require_value(argv, index, value, "a path or -")
+			index = index + 1
+		elseif value == "--identity-passphrase-file" then
+			result.identity_passphrase_file = require_value(argv, index, value, "a path or -")
+			index = index + 1
 		elseif value == "--as" then
 			result.identity = require_value(argv, index, value, "a project identity")
 			index = index + 1
@@ -91,6 +113,29 @@ function M.parse(argv)
 		result.recipient = positional[2]
 		if not result.recipient then
 			error("to requires a project identity", 0)
+		end
+	elseif result.verb == "smime" then
+		result.action = positional[2]
+		if result.action ~= "init-ca" and result.action ~= "issue" then
+			error("smime requires init-ca or issue", 0)
+		end
+		local required = result.action == "init-ca"
+			and {
+				{ "output", "--out" },
+				{ "passphrase_file", "--passphrase-file" },
+			}
+			or {
+				{ "ca", "--ca" },
+				{ "output", "--out" },
+				{ "email", "--email" },
+				{ "name", "--name" },
+				{ "ca_passphrase_file", "--ca-passphrase-file" },
+				{ "identity_passphrase_file", "--identity-passphrase-file" },
+			}
+		for _, field in ipairs(required) do
+			if not result[field[1]] then
+				error("smime " .. result.action .. " requires " .. field[2], 0)
+			end
 		end
 	end
 

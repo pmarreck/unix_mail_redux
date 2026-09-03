@@ -46,6 +46,29 @@
       mechanically before granting stronger authority. Prefer native S/MIME if
       its certificate lifecycle and mobile compose flow remain tolerable;
       compare it with PGP/MIME and a small signed-directive attachment.
+      - [ ] Add a narrow LuaJIT FFI adapter for the Nix-pinned OpenSSL 3
+        `libcrypto`, with opaque handles and explicit ownership transfer. Load
+        its immutable Nix-store path; never fall back to an ambient library in
+        packaged operation.
+      - [ ] Generate a self-signed P-256 private root CA in a caller-selected
+        offline directory, storing its private key only as encrypted PKCS#8 and
+        refusing to replace any existing key or certificate.
+      - [ ] Issue a purpose-separated P-256 S/MIME signing identity whose
+        RFC822 subjectAltName matches the requested mailbox, then export the
+        identity and CA chain as a password-protected PKCS#12 file for Apple
+        Mail. Keep private passphrases out of argv, logs, Git, and the Nix
+        store.
+      - [ ] Verify signed S/MIME messages through the FFI adapter against an
+        explicit private trust root, expected email identity, injected
+        verification time, exactly one signer, and a durable replay key before
+        granting authority.
+      - [ ] Differentially test generated certificates and signed messages
+        against the independent `openssl` CLI oracle. Cover valid, tampered,
+        wrong-address, untrusted-root, expired, multi-signer, and replay cases.
+      - [ ] Document the offline ceremony and stop at the live-install gate:
+        Peter imports the CA/identity on his iPhone, enables signing, and sends
+        the first signed message. Do not activate signed-mail authority until
+        that Apple Mail round trip passes.
       - Evaluate Sigil as the operator-facing certificate/custody boundary,
         while keeping CMS, X.509, MIME canonicalization, and message
         verification in an established independent implementation. Never

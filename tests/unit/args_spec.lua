@@ -54,6 +54,54 @@ describe("post argument parsing", function()
 		}))
 	end)
 
+	it("parses an offline private-CA creation ceremony", function()
+		assert.same({
+			verb = "smime",
+			action = "init-ca",
+			output = "/media/Offline Keys/agent mail ca",
+			passphrase_file = "/run/user/1000/ca passphrase",
+			format = "human",
+		}, args.parse({
+			"smime", "init-ca",
+			"--out", "/media/Offline Keys/agent mail ca",
+			"--passphrase-file", "/run/user/1000/ca passphrase",
+		}))
+	end)
+
+	it("parses an Apple S/MIME identity issuance ceremony in any option order", function()
+		assert.same({
+			verb = "smime",
+			action = "issue",
+			ca = "/media/Offline Keys/agent mail ca",
+			output = "/media/Offline Keys/peter iphone",
+			email = "peter@agents.home.arpa",
+			name = "Peter iPhone",
+			ca_passphrase_file = "/run/user/1000/ca passphrase",
+			identity_passphrase_file = "/run/user/1000/iphone passphrase",
+			format = "human",
+		}, args.parse({
+			"--name", "Peter iPhone",
+			"smime", "issue",
+			"--identity-passphrase-file", "/run/user/1000/iphone passphrase",
+			"--ca", "/media/Offline Keys/agent mail ca",
+			"--email", "peter@agents.home.arpa",
+			"--out", "/media/Offline Keys/peter iphone",
+			"--ca-passphrase-file", "/run/user/1000/ca passphrase",
+		}))
+	end)
+
+	it("rejects incomplete or secret-bearing S/MIME arguments", function()
+		assert.has_error(function()
+			args.parse({ "smime", "init-ca", "--out", "/tmp/ca" })
+		end, "smime init-ca requires --passphrase-file")
+		assert.has_error(function()
+			args.parse({ "smime", "issue", "--email", "peter@agents.home.arpa" })
+		end, "smime issue requires --ca")
+		assert.has_error(function()
+			args.parse({ "smime", "issue", "--passphrase", "visible-secret" })
+		end, "unknown option: --passphrase")
+	end)
+
 	it("recognizes help and about", function()
 		assert.same({ verb = "help", format = "human" }, args.parse({ "-h" }))
 		assert.same({ verb = "about", format = "human" }, args.parse({ "--about" }))
