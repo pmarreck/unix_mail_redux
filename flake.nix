@@ -29,12 +29,15 @@
 			devShells = forAllSystems (system:
 				let
 					pkgs = pkgsFor system;
+					libcrypto = "${nixpkgs.lib.getLib pkgs.openssl}/lib/libcrypto${pkgs.stdenv.hostPlatform.extensions.sharedLibrary}";
 				in {
 					default = pkgs.mkShell {
 						packages = [
 							(luaFor pkgs)
 							pkgs.himalaya
+							pkgs.openssl
 						];
+						POST_LIBCRYPTO = libcrypto;
 					};
 				});
 

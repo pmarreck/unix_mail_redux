@@ -9,6 +9,7 @@
 	coreutils,
 	gnugrep,
 	gnused,
+	openssl,
 	util-linux,
 }:
 
@@ -49,6 +50,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 				--add-flags "$out/share/unix-mail-redux/post.lua" \
 				--prefix LUA_PATH ';' "$out/share/unix-mail-redux/?.lua" \
 				--set-default POST_HIMALAYA "${lib.getExe himalaya}" \
+				--set POST_LIBCRYPTO "${lib.getLib openssl}/lib/libcrypto${stdenvNoCC.hostPlatform.extensions.sharedLibrary}" \
 				--set-default POST_TMUX "${lib.getExe tmux}" \
 				--set-default POST_TMUX_WAKE "$out/bin/post-tmux-wake"
 			cp bin/post-tmux-wake "$out/bin/post-tmux-wake"
@@ -67,6 +69,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 				--add-flags "$out/share/unix-mail-redux/post.lua" \
 				--prefix LUA_PATH ';' "$out/share/unix-mail-redux/?.lua" \
 				--set-default POST_HIMALAYA "${lib.getExe himalaya}" \
+				--set POST_LIBCRYPTO "${lib.getLib openssl}/lib/libcrypto${stdenvNoCC.hostPlatform.extensions.sharedLibrary}" \
 				--set-default POST_TMUX "${lib.getExe tmux}"
 		''}
 		runHook postInstall
