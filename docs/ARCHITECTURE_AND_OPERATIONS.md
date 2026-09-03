@@ -153,21 +153,22 @@ apparently from the configured human address is treated as his instruction,
 subject to the same scope and safety constraints as an interactive prompt.
 This is a stated risk decision, not cryptographic sender authentication.
 
-The planned low-friction upgrade is S/MIME signing. Apple Mail supports signed
+The implemented low-friction upgrade is S/MIME signing. Apple Mail supports signed
 mail on iPhone, iPad, and Mac; [Apple's S/MIME
-documentation](https://support.apple.com/en-gb/102245) describes installing an
-identity certificate for the account. A private certification authority can
-issue one certificate restricted to the human address. The server can then
-verify the raw message, certificate chain, signed body, address binding,
-validity period, and replay identifier before marking an instruction as
-human-signed. PGP/MIME needs third-party Apple clients or plug-ins, while a
-custom signed attachment loses the ordinary compose-and-send workflow.
+documentation](https://support.apple.com/en-us/102245) describes installing an
+identity certificate for the account. `post smime init-ca` creates a
+self-signed private root, `post smime issue` creates a purpose-restricted Apple
+Mail identity, and `post smime verify` checks the raw message, certificate
+chain, signed body, exact address, current validity, one-signer constraint, and
+durable replay identifier. The complete custody and live-test procedure is in
+[SMIME.md](SMIME.md).
 
 The signing private key must remain off the agent host. An identity imported
 only into Peter's Apple devices gives materially better separation than a key
-stored on the NixOS server. Hardware-backed or offline signing remains a later
-option. Until verification ships, the CLI and watcher must not label a message
-as cryptographically verified.
+stored on the NixOS server. Hardware-backed root signing through a YubiKey
+remains a later option. The verification command has shipped, but automatic
+authority remains disabled until a real Apple Mail round trip passes the live
+gate.
 
 ## NixOS installation
 
@@ -273,12 +274,14 @@ nix flake check
 ```
 
 The suite covers pure identity and wake decisions, shell-free process
-arguments, CLI behavior, real tmux focus/attachment gates, Maildir state, Nix
-module evaluation, and a NixOS VM that exercises authenticated SMTP submission,
-LMTP delivery, IMAP retrieval, Seen flags, threading, Sent storage, plain IMAP
-compatibility, and relay rejection.
+arguments, CLI behavior, real tmux focus/attachment gates, Maildir state,
+private certificate creation, independent S/MIME differential checks, replay
+claims, Nix module evaluation, and a NixOS VM that exercises authenticated SMTP
+submission, LMTP delivery, IMAP retrieval, Seen flags, threading, Sent storage,
+plain IMAP compatibility, and relay rejection.
 
 Current limits are explicit recipient namespaces, a durable agent registry,
-S/MIME verification, Markdown multipart composition, full delivery receipts,
-and diagnostics/dead-letter reporting. They remain tracked in `PLAN.md` and
-must not be described as shipped behavior.
+live Apple Mail S/MIME approval and automatic authority wiring, Markdown
+multipart composition, full delivery receipts, and diagnostics/dead-letter
+reporting. They remain tracked in `PLAN.md` and must not be described as
+shipped behavior.

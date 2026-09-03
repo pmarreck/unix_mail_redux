@@ -68,6 +68,7 @@ function M.ca_paths(directory)
 	return {
 		private_key = join(directory, "root-ca-key.pem"),
 		certificate = join(directory, "root-ca.pem"),
+		apple_certificate = join(directory, "root-ca.cer"),
 	}
 end
 

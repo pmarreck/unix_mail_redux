@@ -25,6 +25,7 @@ describe("S/MIME offline ceremony", function()
 					return {
 						private_key_pem = "ENCRYPTED ROOT KEY",
 						certificate_pem = "ROOT CERTIFICATE",
+						certificate_der = "ROOT CERTIFICATE DER",
 					}
 				end,
 			},
@@ -37,11 +38,13 @@ describe("S/MIME offline ceremony", function()
 		assert.same({
 			{ name = "root-ca-key.pem", contents = "ENCRYPTED ROOT KEY", mode = 384 },
 			{ name = "root-ca.pem", contents = "ROOT CERTIFICATE", mode = 420 },
+			{ name = "root-ca.cer", contents = "ROOT CERTIFICATE DER", mode = 420 },
 		}, writes)
 		assert.same({
 			kind = "ca",
 			private_key = "/offline/mail ca/root-ca-key.pem",
 			certificate = "/offline/mail ca/root-ca.pem",
+			apple_certificate = "/offline/mail ca/root-ca.cer",
 		}, result)
 	end)
 

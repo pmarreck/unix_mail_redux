@@ -117,6 +117,7 @@ describe("Nix-pinned OpenSSL FFI", function()
 
 		assert.matches("^%-%-%-%-%-BEGIN ENCRYPTED PRIVATE KEY%-%-%-%-%-", ca.private_key_pem)
 		assert.matches("^%-%-%-%-%-BEGIN CERTIFICATE%-%-%-%-%-", ca.certificate_pem)
+		assert.are.equal(0x30, ca.certificate_der:byte(1))
 		assert.is_nil(ca.private_key)
 
 		local identity = openssl.issue_identity({
@@ -163,10 +164,12 @@ describe("Nix-pinned OpenSSL FFI", function()
 			(os.getenv("TMPDIR") or "/tmp") .. "/post-smime-oracle-XXXXXX"))
 		local root_key_path = directory .. "/root-key.pem"
 		local root_certificate_path = directory .. "/root.pem"
+		local root_der_path = directory .. "/root.cer"
 		local identity_certificate_path = directory .. "/identity.pem"
 		local pkcs12_path = directory .. "/identity.p12"
 		write_file(root_key_path, ca.private_key_pem)
 		write_file(root_certificate_path, ca.certificate_pem)
+		write_file(root_der_path, ca.certificate_der)
 		write_file(identity_certificate_path, identity.certificate_pem)
 		write_file(pkcs12_path, identity.pkcs12_der)
 
@@ -184,6 +187,16 @@ describe("Nix-pinned OpenSSL FFI", function()
 		assert.matches("ASN1 OID: prime256v1", root_text.stdout)
 		assert.matches("CA:TRUE, pathlen:0", root_text.stdout)
 		assert.matches("Certificate Sign, CRL Sign", root_text.stdout)
+		local pem_fingerprint = run_oracle(executable, {
+			"x509", "-in", root_certificate_path, "-noout", "-fingerprint", "-sha256",
+		})
+		local der_fingerprint = run_oracle(executable, {
+			"x509", "-inform", "DER", "-in", root_der_path,
+			"-noout", "-fingerprint", "-sha256",
+		})
+		assert.are.equal(0, pem_fingerprint.rc, pem_fingerprint.stderr)
+		assert.are.equal(0, der_fingerprint.rc, der_fingerprint.stderr)
+		assert.are.equal(pem_fingerprint.stdout, der_fingerprint.stdout)
 
 		local identity_text = run_oracle(executable, {
 			"x509", "-in", identity_certificate_path, "-noout", "-text",

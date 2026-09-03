@@ -26,11 +26,17 @@ function M.init_ca(options, dependencies)
 			contents = generated.certificate_pem,
 			mode = 420,
 		},
+		{
+			name = "root-ca.cer",
+			contents = generated.certificate_der,
+			mode = 420,
+		},
 	})
 	return {
 		kind = "ca",
 		private_key = paths.private_key,
 		certificate = paths.certificate,
+		apple_certificate = paths.apple_certificate,
 	}
 end
 

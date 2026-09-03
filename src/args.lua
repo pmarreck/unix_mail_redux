@@ -56,11 +56,20 @@ function M.parse(argv)
 		elseif value == "--out" then
 			result.output = require_value(argv, index, value, "a path")
 			index = index + 1
+		elseif value == "--input" then
+			result.input = require_value(argv, index, value, "a path, -, or @stdin")
+			index = index + 1
 		elseif value == "--passphrase-file" then
 			result.passphrase_file = require_value(argv, index, value, "a path or -")
 			index = index + 1
 		elseif value == "--ca" then
 			result.ca = require_value(argv, index, value, "a path")
+			index = index + 1
+		elseif value == "--ca-cert" then
+			result.ca_certificate = require_value(argv, index, value, "a path")
+			index = index + 1
+		elseif value == "--replay-dir" then
+			result.replay_directory = require_value(argv, index, value, "a path")
 			index = index + 1
 		elseif value == "--email" then
 			result.email = require_value(argv, index, value, "an address")
@@ -116,15 +125,19 @@ function M.parse(argv)
 		end
 	elseif result.verb == "smime" then
 		result.action = positional[2]
-		if result.action ~= "init-ca" and result.action ~= "issue" then
-			error("smime requires init-ca or issue", 0)
+		if result.action ~= "init-ca" and result.action ~= "issue"
+			and result.action ~= "verify"
+		then
+			error("smime requires init-ca, issue, or verify", 0)
 		end
-		local required = result.action == "init-ca"
-			and {
+		local required
+		if result.action == "init-ca" then
+			required = {
 				{ "output", "--out" },
 				{ "passphrase_file", "--passphrase-file" },
 			}
-			or {
+		elseif result.action == "issue" then
+			required = {
 				{ "ca", "--ca" },
 				{ "output", "--out" },
 				{ "email", "--email" },
@@ -132,6 +145,12 @@ function M.parse(argv)
 				{ "ca_passphrase_file", "--ca-passphrase-file" },
 				{ "identity_passphrase_file", "--identity-passphrase-file" },
 			}
+		else
+			required = {
+				{ "ca_certificate", "--ca-cert" },
+				{ "email", "--email" },
+			}
+		end
 		for _, field in ipairs(required) do
 			if not result[field[1]] then
 				error("smime " .. result.action .. " requires " .. field[2], 0)

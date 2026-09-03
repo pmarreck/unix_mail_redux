@@ -102,6 +102,24 @@ describe("post argument parsing", function()
 		end, "unknown option: --passphrase")
 	end)
 
+	it("parses signed-message verification with an explicit trust root", function()
+		assert.same({
+			verb = "smime",
+			action = "verify",
+			input = "/tmp/signed message.eml",
+			ca_certificate = "/media/public root/root-ca.pem",
+			email = "peter@agents.home.arpa",
+			replay_directory = "/var/lib/post/replays",
+			format = "human",
+		}, args.parse({
+			"--input", "/tmp/signed message.eml",
+			"smime", "verify",
+			"--replay-dir", "/var/lib/post/replays",
+			"--email", "peter@agents.home.arpa",
+			"--ca-cert", "/media/public root/root-ca.pem",
+		}))
+	end)
+
 	it("recognizes help and about", function()
 		assert.same({ verb = "help", format = "human" }, args.parse({ "-h" }))
 		assert.same({ verb = "about", format = "human" }, args.parse({ "--about" }))

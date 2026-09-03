@@ -14,6 +14,9 @@ service that exists only inside a tailnet.
 See the [complete architecture, setup, usage, security, and operations
 guide](docs/ARCHITECTURE_AND_OPERATIONS.md).
 
+Private S/MIME root creation, Apple Mail identity issuance, and signed-message
+verification are documented in the [offline S/MIME ceremony](docs/SMIME.md).
+
 ## Try it
 
 The NixOS server module must be active first. On Peter's Thelio, apply its

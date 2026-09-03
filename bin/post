@@ -40,24 +40,46 @@ if parsed.verb == "smime" then
 	local ceremony = require("smime_ceremony")
 	local crypto = require("openssl_crypto")
 	local files = require("secure_files")
-	local operation = parsed.action == "init-ca" and ceremony.init_ca or ceremony.issue
-	local succeeded, result = pcall(operation, parsed, {
-		crypto = crypto,
-		read_file = files.read_file,
-		read_secret = files.read_secret,
-		create_directory = files.create_directory,
-		now = os.time,
-	})
+	local succeeded
+	local result
+	if parsed.action == "verify" then
+		local state_home = os.getenv("XDG_STATE_HOME")
+			or ((os.getenv("HOME") or ".") .. "/.local/state")
+		parsed.replay_directory = parsed.replay_directory
+			or (state_home .. "/unix-mail-redux/smime-replays")
+		succeeded, result = pcall(require("smime_verification").verify, parsed, {
+			crypto = crypto,
+			read_file = files.read_file,
+			read_input = files.read_input,
+			claim = require("smime_replay").claim,
+			now = os.time,
+		})
+	else
+		local operation = parsed.action == "init-ca"
+			and ceremony.init_ca or ceremony.issue
+		succeeded, result = pcall(operation, parsed, {
+			crypto = crypto,
+			read_file = files.read_file,
+			read_secret = files.read_secret,
+			create_directory = files.create_directory,
+			now = os.time,
+		})
+	end
 	if not succeeded then
 		io.stderr:write("post: ", tostring(result), "\n")
 		os.exit(2)
 	end
 	if parsed.format == "json" then
 		io.write(require("cjson").encode(result), "\n")
+	elseif result.content then
+		io.write(result.content)
+		io.stderr:write("Verified S/MIME signer: ", result.signer_email, "\n",
+			"Replay key: ", result.replay_key, "\n")
 	elseif result.kind == "ca" then
 		io.write("Created S/MIME root CA.\n",
 			"Private key: ", result.private_key, "\n",
 			"Certificate: ", result.certificate, "\n",
+			"Apple certificate: ", result.apple_certificate, "\n",
 			"Keep the private key offline.\n")
 	else
 		io.write("Created S/MIME identity for ", result.email, ".\n",

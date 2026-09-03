@@ -95,6 +95,7 @@ ffi.cdef([[
 	EVP_PKEY *PEM_read_bio_PrivateKey(BIO *bio, EVP_PKEY **key,
 		pem_password_cb *callback, void *userdata);
 	int PEM_write_bio_X509(BIO *bio, const X509 *certificate);
+	int i2d_X509_bio(BIO *bio, X509 *certificate);
 	X509 *PEM_read_bio_X509(BIO *bio, X509 **certificate,
 		pem_password_cb *callback, void *userdata);
 
@@ -309,6 +310,13 @@ local function certificate_pem(certificate)
 	return bio_contents(bio)
 end
 
+local function certificate_der(certificate)
+	local bio = new_memory_bio()
+	require_one(crypto.i2d_X509_bio(bio, certificate),
+		"could not DER-encode the X.509 certificate")
+	return bio_contents(bio)
+end
+
 local function encrypted_private_key_pem(key, passphrase)
 	local bio = new_memory_bio()
 	require_one(crypto.PEM_write_bio_PKCS8PrivateKey(bio, key,
@@ -387,6 +395,7 @@ function M.create_ca(options)
 	return {
 		private_key_pem = encrypted_private_key_pem(key, passphrase),
 		certificate_pem = certificate_pem(certificate),
+		certificate_der = certificate_der(certificate),
 	}
 end
 

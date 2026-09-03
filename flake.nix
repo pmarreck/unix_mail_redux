@@ -53,6 +53,13 @@
 							"post 0.1.0: project-aware Unix mail for humans and agents (${platformLabels.${system}})"
 						post --simple --help | ${pkgs.gnugrep}/bin/grep -Fqx \
 							'usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch|smime ACTION]'
+						printf '%s\n' 'packaged smoke-test root passphrase' > root-passphrase
+						post --simple smime init-ca \
+							--out root-ca \
+							--passphrase-file root-passphrase >/dev/null
+						test -s root-ca/root-ca-key.pem
+						test -s root-ca/root-ca.pem
+						test -s root-ca/root-ca.cer
 						${nixpkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
 							post-tmux-wake --help | ${pkgs.gnugrep}/bin/grep -Fqx \
 								'usage: post-tmux-wake --session NAME --pane ID --expected-cursor-y ROW --expected-cursor-line TEXT --message TEXT [--tmux PATH] [--socket PATH]'

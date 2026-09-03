@@ -71,17 +71,27 @@
         writes only the password-protected identity package and public leaf
         certificate into a new protected directory. The CLI and real-filesystem
         tests prove path-with-spaces handling, file modes, and collision refusal.
-      - [ ] Verify signed S/MIME messages through the FFI adapter against an
+      - [x] Verify signed S/MIME messages through the FFI adapter against an
         explicit private trust root, expected email identity, injected
         verification time, exactly one signer, and a durable replay key before
         granting authority.
-      - [ ] Differentially test generated certificates and signed messages
+        Completed 2026-09-03 15:32 EDT. Verification uses a private trust store,
+        strict X.509 rules, an exact mailbox check, one CMS signer, and a
+        filesystem-exclusive SHA-256 signature claim before returning content.
+      - [x] Differentially test generated certificates and signed messages
         against the independent `openssl` CLI oracle. Cover valid, tampered,
         wrong-address, untrusted-root, expired, multi-signer, and replay cases.
-      - [ ] Document the offline ceremony and stop at the live-install gate:
+        Completed 2026-09-03 15:32 EDT. The pinned CLI independently signs the
+        fixtures and inspects the generated chain, extensions, algorithms,
+        PKCS#12 encryption, DER export, identity match, and rejection cases.
+      - [x] Document the offline ceremony and stop at the live-install gate:
         Peter imports the CA/identity on his iPhone, enables signing, and sends
         the first signed message. Do not activate signed-mail authority until
         that Apple Mail round trip passes.
+        Completed 2026-09-03 15:32 EDT. `docs/SMIME.md` contains the offline
+        key-custody procedure, exact commands, Apple import boundary, raw-mail
+        verification pipe, renewal limits, and optional YubiKey migration. The
+        live Apple Mail round trip remains the parent task's final gate.
       - Evaluate Sigil as the operator-facing certificate/custody boundary,
         while keeping CMS, X.509, MIME canonicalization, and message
         verification in an established independent implementation. Never

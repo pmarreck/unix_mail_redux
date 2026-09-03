@@ -44,6 +44,7 @@ describe("S/MIME certificate policy", function()
 		assert.same({
 			private_key = "/offline/mail ca/root-ca-key.pem",
 			certificate = "/offline/mail ca/root-ca.pem",
+			apple_certificate = "/offline/mail ca/root-ca.cer",
 		}, policy.ca_paths("/offline/mail ca"))
 		assert.same({
 			pkcs12 = "/offline/peter iphone/identity.p12",

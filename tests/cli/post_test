@@ -49,6 +49,7 @@ identity_directory="$smime_sandbox/peter iphone"
 expected_ca_output="Created S/MIME root CA.
 Private key: $ca_directory/root-ca-key.pem
 Certificate: $ca_directory/root-ca.pem
+Apple certificate: $ca_directory/root-ca.cer
 Keep the private key offline."
 expect "create offline S/MIME root" 0 "$expected_ca_output" "" \
 	"$project_root/bin/post" --simple smime init-ca \
@@ -71,6 +72,48 @@ expect "refuse to replace an S/MIME identity" 2 "" \
 	--email peter@agents.home.arpa --name "Peter iPhone" \
 	--ca-passphrase-file "$smime_sandbox/root-passphrase" \
 	--identity-passphrase-file "$smime_sandbox/phone-passphrase"
+
+printf '%s\n' 'approved signed instruction' > "$smime_sandbox/instruction.txt"
+printf '%s\n' 'phone passphrase with enough entropy' | \
+	"$POST_OPENSSL" pkcs12 -in "$identity_directory/identity.p12" \
+	-passin stdin -nocerts -nodes -out "$smime_sandbox/identity-key.pem" \
+	2> "$smime_sandbox/pkcs12-extract.log"
+if (( $? != 0 )); then
+	printf 'FAIL extract test S/MIME identity\n' >&2
+	failures=$((failures + 1))
+fi
+"$POST_OPENSSL" cms -sign -in "$smime_sandbox/instruction.txt" \
+	-signer "$identity_directory/identity.pem" \
+	-inkey "$smime_sandbox/identity-key.pem" \
+	-out "$smime_sandbox/signed.eml" -outform SMIME -md sha256 -text \
+	2> "$smime_sandbox/smime-sign.log"
+if (( $? != 0 )); then
+	printf 'FAIL independently sign test S/MIME message\n' >&2
+	failures=$((failures + 1))
+fi
+declare out err rc
+capture "$project_root/bin/post" --simple smime verify \
+	--input "$smime_sandbox/signed.eml" \
+	--ca-cert "$ca_directory/root-ca.pem" \
+	--email peter@agents.home.arpa \
+	--replay-dir "$smime_sandbox/replays"
+verification_prefix=$'Verified S/MIME signer: peter@agents.home.arpa\nReplay key: sha256:'
+replay_digest="${err#"$verification_prefix"}"
+if [[ $rc != 0 || $out != *'approved signed instruction'* \
+	|| $err == "$replay_digest" || ! $replay_digest =~ ^[0-9a-f]{64}$ ]]
+then
+	printf 'FAIL verify signed S/MIME message\n  rc: %q\n  out: %q\n  err: %q\n' \
+		"$rc" "$out" "$err" >&2
+	failures=$((failures + 1))
+fi
+replay_key="sha256:$replay_digest"
+expect "refuse replayed S/MIME message" 2 "" \
+	"post: replayed S/MIME signature: $replay_key" \
+	"$project_root/bin/post" --simple smime verify \
+	--input "$smime_sandbox/signed.eml" \
+	--ca-cert "$ca_directory/root-ca.pem" \
+	--email peter@agents.home.arpa \
+	--replay-dir "$smime_sandbox/replays"
 
 expected_list_args=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\n--json\nenvelope\nlist\n--mailbox\nAgents.validate'
 expect "JSON project inbox" 0 "$expected_list_args" "" \

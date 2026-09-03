@@ -3,6 +3,7 @@ local uv = require("luv")
 local M = {}
 local DEFAULT_MAXIMUM_BYTES = 16 * 1024 * 1024
 local MAXIMUM_SECRET_BYTES = 4096
+local MAXIMUM_MESSAGE_BYTES = 16 * 1024 * 1024
 
 local function fail(message)
 	error(message, 0)
@@ -144,6 +145,17 @@ function M.read_secret(path)
 	local contents = io.stdin:read(MAXIMUM_SECRET_BYTES + 1) or ""
 	if #contents > MAXIMUM_SECRET_BYTES then
 		fail("secret from stdin exceeds " .. MAXIMUM_SECRET_BYTES .. " bytes")
+	end
+	return contents
+end
+
+function M.read_input(path)
+	if path ~= "-" and path ~= "@stdin" then
+		return M.read_file(path, MAXIMUM_MESSAGE_BYTES)
+	end
+	local contents = io.stdin:read(MAXIMUM_MESSAGE_BYTES + 1) or ""
+	if #contents > MAXIMUM_MESSAGE_BYTES then
+		fail("S/MIME input exceeds " .. MAXIMUM_MESSAGE_BYTES .. " bytes")
 	end
 	return contents
 end
