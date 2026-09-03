@@ -38,6 +38,7 @@
 							pkgs.openssl
 						];
 						POST_LIBCRYPTO = libcrypto;
+						POST_OPENSSL = nixpkgs.lib.getExe pkgs.openssl;
 					};
 				});
 

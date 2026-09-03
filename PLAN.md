@@ -46,10 +46,15 @@
       mechanically before granting stronger authority. Prefer native S/MIME if
       its certificate lifecycle and mobile compose flow remain tolerable;
       compare it with PGP/MIME and a small signed-directive attachment.
-      - [ ] Add a narrow LuaJIT FFI adapter for the Nix-pinned OpenSSL 3
+      - [x] Add a narrow LuaJIT FFI adapter for the Nix-pinned OpenSSL 3
         `libcrypto`, with opaque handles and explicit ownership transfer. Load
         its immutable Nix-store path; never fall back to an ambient library in
         packaged operation.
+        Completed 2026-09-03 15:07 EDT. The adapter generates P-256 keys,
+        encrypted PKCS#8 roots, constrained X.509 certificates, and PKCS#12
+        identities entirely in memory. An independently invoked, Nix-pinned
+        OpenSSL CLI checks the algorithms, extensions, S/MIME purpose, exact
+        mailbox identity, chain, encryption, and PKCS#12 readability.
       - [ ] Generate a self-signed P-256 private root CA in a caller-selected
         offline directory, storing its private key only as encrypted PKCS#8 and
         refusing to replace any existing key or certificate.
