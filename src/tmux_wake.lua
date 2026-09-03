@@ -21,7 +21,10 @@ function M.parse_panes(output, project)
 			"^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$"
 		)
 		if session and dead == "0" and agent_commands[command]
-			and identity.normalize(basename(path)) == identity.normalize(project)
+			and (
+				identity.normalize(basename(path)) == identity.normalize(project)
+				or identity.normalize(session) == identity.normalize(project)
+			)
 		then
 			table.insert(matches, {
 				session = session,
@@ -63,6 +66,21 @@ function M.probe(runner, executable, project)
 	end
 
 	local pane = panes[1]
+	local clients = runner({
+		executable, "list-clients", "-t", pane.session, "-F", "#{client_name}",
+	}, { capture = true })
+	if clients.rc ~= 0 then
+		return { state = "unknown" }
+	end
+	if clients.stdout:match("%S") then
+		return {
+			state = "attached",
+			session = pane.session,
+			pane = pane.pane,
+			command = pane.command,
+		}
+	end
+
 	local cursor = runner({
 		executable, "display-message", "-p", "-t", pane.pane, "#{cursor_y}",
 	}, { capture = true })
@@ -94,7 +112,7 @@ end
 
 function M.notify_argv(executable, target, project, count)
 	return {
-		executable, "display-message", "-t", target.session, "--",
+		executable, "display-message", "-d", "0", "-t", target.session, "--",
 		string.format("📬 %d unread %s for %s", count, mail_label(count), project),
 	}
 end

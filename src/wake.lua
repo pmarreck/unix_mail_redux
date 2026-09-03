@@ -2,6 +2,7 @@ local M = {}
 
 local state_actions = {
 	absent = "defer",
+	attached = "notify",
 	busy = "notify",
 	dialog = "defer",
 	crashed = "notify",

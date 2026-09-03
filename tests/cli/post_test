@@ -104,7 +104,7 @@ expect "one-shot delivery watcher" 0 "" \
 	--maildir "$watch_sandbox/mail" \
 	--state-file "$watch_sandbox/state/watch.json"
 watch_calls="$(cat "$watch_sandbox/tmux.calls")"
-if [[ $watch_calls != *'display-message|-t|validate|--|📬 1 unread mail message for validate|'* ]]; then
+if [[ $watch_calls != *'display-message|-d|0|-t|validate|--|📬 1 unread mail message for validate|'* ]]; then
 	printf 'FAIL watcher omitted the side-band notice\n' >&2
 	failures=$((failures + 1))
 fi

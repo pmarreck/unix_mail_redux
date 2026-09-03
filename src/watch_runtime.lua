@@ -25,6 +25,12 @@ local function default_report(action, target)
 			action.project,
 			target.session and "" or " (no unambiguous agent pane)"
 		))
+	elseif action.type == "wake_deferred" then
+		io.stderr:write(string.format(
+			"post: terminal wake deferred for %s: %s\n",
+			action.project,
+			action.detail
+		))
 	end
 end
 
@@ -74,12 +80,13 @@ function M.run_once(config, dependencies)
 		terminal_states[project] = probe.state
 	end
 
+	local now = deps.now()
 	local next_state, actions = watch.cycle({
 		deliveries = deliveries,
 		state = state,
 		terminal_states = terminal_states,
 		authorized = config.authorized,
-		now = deps.now(),
+		now = now,
 		cooldown = config.cooldown,
 		notice_retry = config.notice_retry,
 	})
@@ -103,12 +110,29 @@ function M.run_once(config, dependencies)
 			local result = deps.run(argv, { capture = true })
 			if result.rc ~= 0 then
 				local detail = (result.stderr or ""):gsub("%s+$", "")
-				error(string.format(
-					"%s failed for %s: %s",
-					action.type == "wake" and "terminal wake" or "tmux notify",
-					action.project,
-					detail ~= "" and detail or "exit " .. tostring(result.rc)
-				), 0)
+				if action.type == "wake" and result.rc == 75 then
+					for key, message in pairs(next_state.messages) do
+						if key:sub(1, #action.project + 1) == action.project .. "\0"
+							and message.woken_at == now
+							and not (((state.messages or {})[key] or {}).woken_at)
+						then
+							message.woken_at = nil
+						end
+					end
+					deps.report({
+						type = "wake_deferred",
+						project = action.project,
+						count = action.count,
+						detail = detail ~= "" and detail or "temporary safety veto",
+					}, target)
+				else
+					error(string.format(
+						"%s failed for %s: %s",
+						action.type == "wake" and "terminal wake" or "tmux notify",
+						action.project,
+						detail ~= "" and detail or "exit " .. tostring(result.rc)
+					), 0)
+				end
 			end
 		end
 	end

@@ -78,7 +78,7 @@ attached_cursor_y="$(tmux -S "$tmux_socket" display-message -p \
 	-t "$attached_session" '#{cursor_y}')"
 attached_screen="$(tmux -S "$tmux_socket" capture-pane -p -t "$attached_session")"
 attached_cursor_line="$(sed -n "$((attached_cursor_y + 1))p" <<<"$attached_screen")"
-if "$helper" \
+"$helper" \
 	--tmux tmux \
 	--socket "$tmux_socket" \
 	--session "$attached_session" \
@@ -87,9 +87,12 @@ if "$helper" \
 	--expected-cursor-line "$attached_cursor_line" \
 	--message must-not-reach-attached-agent \
 	2> "$test_root/attached-rejection.err"
-then
+attached_rejection_rc=$?
+if (( attached_rejection_rc == 0 )); then
 	fail 'wake helper accepted a session with an attached human client'
 fi
+(( attached_rejection_rc == 75 )) || \
+	fail "attached-client veto returned $attached_rejection_rc instead of temporary-deferral status 75"
 grep -Fq 'target session has another attached client; refusing input' \
 	"$test_root/attached-rejection.err" || \
 	fail 'wake helper did not explain the attached-client veto'

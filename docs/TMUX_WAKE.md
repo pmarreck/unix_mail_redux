@@ -86,6 +86,23 @@ input and failed before submission. Prompt text alone was therefore too weak a
 gate: a human draft can race terminal rendering. Tmux's independent client
 attachment state now blocks unattended input before the helper sends any byte.
 
+The watcher now checks that attachment state before it classifies an empty
+prompt as wakeable. An attached session receives a passive tmux message with a
+zero timeout, which keeps the notice visible until the next keypress and never
+enters the agent's input buffer. If a human attaches after that probe, the
+helper returns temporary-deferral status 75. The watcher records the notice and
+cooldown without claiming that the agent was woken; it does not crash and ask
+systemd to retry the same safety veto. Unexpected adapter failures still fail
+the watcher so systemd can restart a genuinely broken process.
+
+This does not give terminal input cryptographic provenance. Tmux, a terminal
+emulator, and the agent TUI all see the fixed wake sentence as keyboard input.
+The safety case depends on admitting only a hard-coded sentence at a detached,
+revalidated empty prompt. Mail bodies are never injected. They remain untrusted
+data after the agent reads them, and cannot grant execution authority. A fully
+separate trusted wake channel requires support from each agent harness or a
+verified signed-directive gate outside the model.
+
 The phase boundaries matter. A trace of an earlier draft showed Codex receiving
 `FocusOut + FocusIn + message + Return` in one `read(2)` call and ignoring
 Return. Rendering the message before the separate Return gives the TUI an

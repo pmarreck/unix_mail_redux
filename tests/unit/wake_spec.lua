@@ -49,6 +49,7 @@ describe("wake policy", function()
 	it("classifies terminal states as a set", function()
 		local cases = {
 			{ state = "absent", action = "defer" },
+			{ state = "attached", action = "notify" },
 			{ state = "busy", action = "notify" },
 			{ state = "dialog", action = "defer" },
 			{ state = "crashed", action = "notify" },

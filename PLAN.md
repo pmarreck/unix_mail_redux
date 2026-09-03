@@ -1,5 +1,31 @@
 # UNIX MAIL REDUX plan
 
+- [ ] Add opt-in Markdown composition as a standards-compliant
+      `multipart/alternative` message: retain the Markdown source as the
+      `text/plain` fallback and add a restricted, sanitized `text/html` part
+      for graphical mail clients.
+      - Curiosity poke: permit only static structural markup and safe URL
+        schemes; scripts, inline event handlers, remote images, arbitrary CSS,
+        and raw HTML must not cross the renderer boundary.
+      - Prove exact MIME structure, Unicode, escaping, nested lists, links,
+        code blocks, malformed input, plain-client fallback, and Mail.app
+        rendering before making Markdown the default for any path.
+- [ ] Make delivery notification safe and resilient after the live 2026-09-02
+      failure: an attached-human veto must be classified before wake input,
+      remain a successful watcher cycle if attachment races the probe, and
+      never trigger a systemd restart loop.
+      - Live reproduction: `code` mail reached the watcher, the helper safely
+        refused the attached `Einstein` client, and `Restart=on-failure`
+        retried the unchanged message more than 800 times.
+      - Curiosity poke: an attached client can appear after the initial probe,
+        so the helper remains the final gate and needs a distinct temporary-
+        deferral result rather than an indistinguishable hard failure.
+- [ ] Make passive tmux mail notices wait for a keypress and resolve an
+      unqualified mailbox to a uniquely matching tmux session name, allowing
+      `einstein@agents.home.arpa` to notify the `Einstein` session.
+      - Curiosity poke: session-name and project-directory matches may collide;
+        more than one matching live pane must remain ambiguous and receive no
+        terminal input.
 - [x] Add a tailnet-only plaintext IMAP fallback on port 143 for iPhone Mail,
       while retaining IMAPS 993 and SMTPS 465.
       - Live reproduction: iPhone Mail repeatedly opened TCP/993 but sent no

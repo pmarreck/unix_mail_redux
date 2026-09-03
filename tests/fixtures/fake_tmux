@@ -6,6 +6,9 @@ case "${1:-}" in
 	list-panes)
 		printf 'validate\t%%1\tclaude\t/home/test/Code/validate\t0\n'
 		;;
+	list-clients)
+		# The default fixture represents an idle, detached agent session.
+		;;
 	display-message)
 		if [[ ${2:-} == -p ]]; then
 			printf '2\n'
