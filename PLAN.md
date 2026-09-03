@@ -46,6 +46,11 @@
       mechanically before granting stronger authority. Prefer native S/MIME if
       its certificate lifecycle and mobile compose flow remain tolerable;
       compare it with PGP/MIME and a small signed-directive attachment.
+      - Evaluate Sigil as the operator-facing certificate/custody boundary,
+        while keeping CMS, X.509, MIME canonicalization, and message
+        verification in an established independent implementation. Never
+        reuse a license/update key for mail, and never treat Sigil's custom
+        envelope as an S/MIME object.
       - Curiosity poke: a signing key stored where unrestricted agents can read
         it proves nothing; the private key needs Secure Enclave, hardware-token,
         or offline custody while verification remains unattended.
