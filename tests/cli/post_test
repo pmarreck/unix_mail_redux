@@ -29,7 +29,7 @@ with_input() {
 }
 
 expect "help" 0 \
-	"usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch]" \
+	"usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch|smime ACTION]" \
 	"" \
 	"$project_root/bin/post" --simple --help
 
@@ -40,6 +40,37 @@ expect "about" 0 \
 
 expect "unknown option" 2 "" "post: unknown option: --wat" \
 	"$project_root/bin/post" --wat
+
+smime_sandbox="$(mktemp -d "${TMPDIR:-/tmp}/post-smime-cli.XXXXXX")"
+printf '%s\n' 'root passphrase with enough entropy' > "$smime_sandbox/root-passphrase"
+printf '%s\n' 'phone passphrase with enough entropy' > "$smime_sandbox/phone-passphrase"
+ca_directory="$smime_sandbox/offline ca"
+identity_directory="$smime_sandbox/peter iphone"
+expected_ca_output="Created S/MIME root CA.
+Private key: $ca_directory/root-ca-key.pem
+Certificate: $ca_directory/root-ca.pem
+Keep the private key offline."
+expect "create offline S/MIME root" 0 "$expected_ca_output" "" \
+	"$project_root/bin/post" --simple smime init-ca \
+	--out "$ca_directory" --passphrase-file "$smime_sandbox/root-passphrase"
+
+expected_identity_output="Created S/MIME identity for peter@agents.home.arpa.
+PKCS#12: $identity_directory/identity.p12
+Certificate: $identity_directory/identity.pem"
+expect "issue Apple Mail S/MIME identity" 0 "$expected_identity_output" "" \
+	"$project_root/bin/post" --simple smime issue \
+	--ca "$ca_directory" --out "$identity_directory" \
+	--email peter@agents.home.arpa --name "Peter iPhone" \
+	--ca-passphrase-file "$smime_sandbox/root-passphrase" \
+	--identity-passphrase-file "$smime_sandbox/phone-passphrase"
+
+expect "refuse to replace an S/MIME identity" 2 "" \
+	"post: refusing to replace existing output directory: $identity_directory" \
+	"$project_root/bin/post" --simple smime issue \
+	--ca "$ca_directory" --out "$identity_directory" \
+	--email peter@agents.home.arpa --name "Peter iPhone" \
+	--ca-passphrase-file "$smime_sandbox/root-passphrase" \
+	--identity-passphrase-file "$smime_sandbox/phone-passphrase"
 
 expected_list_args=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\n--json\nenvelope\nlist\n--mailbox\nAgents.validate'
 expect "JSON project inbox" 0 "$expected_list_args" "" \
@@ -90,7 +121,7 @@ expect "review and reject threaded reply" 0 "" "${expected_reply_review}Not sent
 	--body $'The bounded test now passes.\n'
 
 watch_sandbox="$(mktemp -d "${TMPDIR:-/tmp}/post-watch-cli.XXXXXX")"
-trap 'rm -rf -- "$watch_sandbox"' EXIT
+trap 'rm -rf -- "$watch_sandbox" "$smime_sandbox"' EXIT
 mkdir -p "$watch_sandbox/mail/.Agents.validate/new"
 touch "$watch_sandbox/mail/.Agents.validate/new/mail-1"
 : > "$watch_sandbox/tmux.calls"

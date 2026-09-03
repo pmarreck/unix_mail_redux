@@ -55,14 +55,22 @@
         identities entirely in memory. An independently invoked, Nix-pinned
         OpenSSL CLI checks the algorithms, extensions, S/MIME purpose, exact
         mailbox identity, chain, encryption, and PKCS#12 readability.
-      - [ ] Generate a self-signed P-256 private root CA in a caller-selected
+      - [x] Generate a self-signed P-256 private root CA in a caller-selected
         offline directory, storing its private key only as encrypted PKCS#8 and
         refusing to replace any existing key or certificate.
-      - [ ] Issue a purpose-separated P-256 S/MIME signing identity whose
+        Completed 2026-09-03 15:14 EDT. `post smime init-ca` creates a new
+        mode-0700 directory, mode-0600 encrypted root key, and public root
+        certificate. Existing output directories are never reused or replaced.
+      - [x] Issue a purpose-separated P-256 S/MIME signing identity whose
         RFC822 subjectAltName matches the requested mailbox, then export the
         identity and CA chain as a password-protected PKCS#12 file for Apple
         Mail. Keep private passphrases out of argv, logs, Git, and the Nix
         store.
+        Completed 2026-09-03 15:14 EDT. `post smime issue` reads both secrets
+        from bounded files or one stdin stream, reads the offline root, and
+        writes only the password-protected identity package and public leaf
+        certificate into a new protected directory. The CLI and real-filesystem
+        tests prove path-with-spaces handling, file modes, and collision refusal.
       - [ ] Verify signed S/MIME messages through the FFI adapter against an
         explicit private trust root, expected email identity, injected
         verification time, exactly one signer, and a durable replay key before
