@@ -10,7 +10,7 @@
       - Prove exact MIME structure, Unicode, escaping, nested lists, links,
         code blocks, malformed input, plain-client fallback, and Mail.app
         rendering before making Markdown the default for any path.
-- [ ] Make delivery notification safe and resilient after the live 2026-09-02
+- [x] Make delivery notification safe and resilient after the live 2026-09-02
       failure: an attached-human veto must be classified before wake input,
       remain a successful watcher cycle if attachment races the probe, and
       never trigger a systemd restart loop.
@@ -20,12 +20,21 @@
       - Curiosity poke: an attached client can appear after the initial probe,
         so the helper remains the final gate and needs a distinct temporary-
         deferral result rather than an indistinguishable hard failure.
-- [ ] Make passive tmux mail notices wait for a keypress and resolve an
+      - Completed 2026-09-02 22:07 EDT. RED tests reproduced five independent
+        gaps. The watcher now preclassifies attached sessions, records helper
+        exit 75 as a deferred wake, preserves prior wake records, and leaves
+        genuine failures fatal. The full suite and NixOS VM pass; the live
+        service remained active with zero restarts after a new delivery.
+- [x] Make passive tmux mail notices wait for a keypress and resolve an
       unqualified mailbox to a uniquely matching tmux session name, allowing
       `einstein@agents.home.arpa` to notify the `Einstein` session.
       - Curiosity poke: session-name and project-directory matches may collide;
         more than one matching live pane must remain ambiguous and receive no
         terminal input.
+      - Completed 2026-09-02 22:07 EDT. Tmux's documented zero-delay message
+        waits for the next keypress. A live `code` to `einstein` delivery
+        resolved the `Einstein` session and logged one passive notice without
+        changing the agent input buffer.
 - [x] Add a tailnet-only plaintext IMAP fallback on port 143 for iPhone Mail,
       while retaining IMAPS 993 and SMTPS 465.
       - Live reproduction: iPhone Mail repeatedly opened TCP/993 but sent no
