@@ -1,6 +1,6 @@
 # UNIX MAIL REDUX plan
 
-- [ ] Add an explicit, safe-by-default deployment option that permits the
+- [x] Add an explicit, safe-by-default deployment option that permits the
       tested PTY wake path for detached Codex sessions. Peter accepted the
       measured Codex interruption risk by email on 2026-09-03 because reliable
       mail wake is required during the launch push; enable the option only on
@@ -14,6 +14,13 @@
         integration, CLI, repository, Nix module, and NixOS VM checks pass; the
         Thelio watcher exposes the opt-in as true. Peter was emailed a request
         for one new message while detached, which remains the end-to-end gate.
+      - Live gate failed 2026-09-03 18:32 EDT. The watcher detected Peter's
+        mail, attached its temporary client, observed a prompt change, refused
+        input, and detached. Five minutes later no Einstein agent pane existed;
+        Peter had to resume Codex at 21:17 EDT. The mail remained unread, so
+        this path caused the measured harm without delivering a wake. Thelio
+        returned to the safe default at 21:25 EDT; native app-server wake
+        remains open.
 - [x] Provision Peter's explicitly accepted final-lap mail policy: an unsigned
       message whose displayed `From` address is exactly
       `peter@agents.home.arpa` is treated as Peter's instruction under the same
