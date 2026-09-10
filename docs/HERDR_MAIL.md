@@ -20,6 +20,7 @@ services.unix-mail-redux = {
     code = "/home/operator";
   };
   wakeProjects = [ "*" ]; # authorizes durable notices, not terminal input
+  terminalWakeProjects = [ "*" ]; # separate, optional guarded-input opt-in
 };
 ```
 
@@ -38,14 +39,41 @@ state does not suppress a new Herdr-era notice.
 
 Claude's plugin inbox monitor can wake idle Claude sessions. Codex's prompt/tool
 hooks expose pending notices during an existing turn or next submitted prompt.
-Grok needs its own inbox integration or a supervised wake. Installing this
-watcher does not magically install monitors into every agent application.
+The optional guarded wake also reaches idle Codex and Grok agents. Installing
+the watcher does not install application plugins into agents.
 
 Herdr 0.8.2 offers `herdr agent prompt TARGET TEXT`, but that is terminal text and
 Enter, not a separate mailbox/event channel. Its public API does not expose a
-human-draft lock. The automatic mail watcher therefore never invokes it. Existing
-owner-authorized manual wake rules still apply. `allowDetachedCodexWake` is a
-retired compatibility option with no effect on this watcher.
+human-draft lock. `terminalWakeProjects` explicitly accepts this advisory race;
+it defaults to empty. `allowDetachedCodexWake` is retired and grants no permission.
+
+## Automatic guarded wakes
+
+The flake pins the llmsend helper and supplies `herdrWakeCommand`. Direct module
+imports must supply that absolute executable path themselves. The daemon uses
+`--service-socket` and `--expect-session`, verifying the socket is private and
+owned by its UID and the target still has the native conversation it discovered.
+It never sets `HERDR_ENV` or starts another agent.
+
+Two asynchronous workers maximum inspect ANSI-preserving snapshots and wait for
+two stable, empty prompt observations. Human text, uncertain layouts, scrollback,
+or non-idle state defer input. Resizing invalidates recovery evidence. The mail
+poller continues while workers observe. Each worker has a 20-second observation
+budget and a 120-second outer timeout (plus 5-second forced termination grace).
+
+The durable note path is saved before starting a worker. The helper journals an
+attempt before typing, so watcher crashes cannot blindly resend it. A stalled
+Herdr response permits at most one guarded Enter recovery. Transport uncertainty
+does not. Deferred attempts retry after `wakeCooldownSeconds` (default 60).
+`unconfirmed`, `already-attempted`, and `activity-observed` are terminal results
+for that note/native-session pair; none is a read acknowledgment. Inspect the
+agent and attempt journal before deciding whether a manual retry is justified.
+
+The watcher stores outcomes in its state JSON and system journal. The helper
+stores per-note attempt records in the owner's
+`$HOME/.local/state/llmsend-wake/` (or `$XDG_STATE_HOME/llmsend-wake/`). Notes and
+mail remain available if wakes fail. New messages receive a new batch notice.
+`post watch --no-wake` disables both durable bridging and terminal wakes.
 
 ## Persistent visibility
 

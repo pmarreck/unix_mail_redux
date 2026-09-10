@@ -8,11 +8,13 @@
 - Mail bodies never enter a terminal input stream. A wake contains only fixed,
   program-generated text directing the agent to inspect its mailbox and apply
   the configured authority policy.
-- A wake may submit input only after mechanically proving an authorized agent
-  is idle at an empty prompt. Ambiguity defers the wake.
-- The automatic Herdr mail watcher never submits terminal input. It writes
-  fixed-content inbox notices for application monitors/hooks. A separate
-  owner-authorized manual wake is an advisory control, not an atomic draft lock.
+- A wake may submit input only after two stable ANSI-aware observations of an
+  authorized idle agent's empty prompt. Ambiguity defers the wake. These checks
+  are advisory; they cannot atomically exclude a racing human keystroke.
+- The automatic watcher writes durable fixed-content inbox notices first.
+  Terminal wakes require a separate explicit operator opt-in, a private owned
+  Herdr socket, and the expected native conversation ID. It never fabricates
+  HERDR_ENV, clears drafts, starts another agent, or blindly resends uncertainty.
 - No public MX, Internet relay, or listener outside loopback and the Tailscale
   firewall boundary is permitted.
 - Credentials and private TLS keys never enter Git or the Nix store.

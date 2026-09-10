@@ -149,13 +149,23 @@ in
 			default = [ ];
 			description = "Mailboxes authorized for durable agent inbox notices; * authorizes all. No terminal input is sent.";
 		};
+		terminalWakeProjects = lib.mkOption {
+			type = lib.types.listOf (lib.types.strMatching "([*]|[a-z0-9][a-z0-9_-]{0,62})");
+			default = [ ];
+			description = "Separate operator opt-in for guarded Herdr terminal wakes; * authorizes all bridged mailboxes. Draft inspection is advisory, not atomic.";
+		};
+		herdrWakeCommand = lib.mkOption {
+			type = lib.types.nullOr lib.types.str;
+			default = null;
+			description = "Absolute path to the pinned llmsend-notify-session helper with explicit service-socket support.";
+		};
 
 		allowDetachedCodexWake = lib.mkOption {
 			type = lib.types.bool;
 			default = false;
 			description = ''
 				Retired tmux option, retained for configuration migration only.
-				The Herdr watcher never submits terminal input, regardless of this value.
+				This value grants no Herdr terminal wake permission; use terminalWakeProjects.
 			'';
 		};
 
@@ -180,6 +190,10 @@ in
 
 	config = lib.mkIf cfg.enable {
 		assertions = [
+			{
+				assertion = cfg.terminalWakeProjects == [] || (cfg.herdrWakeCommand != null && lib.hasPrefix "/" cfg.herdrWakeCommand);
+				message = "Automatic Herdr wakes require an explicit absolute herdrWakeCommand";
+			}
 			{
 				assertion = lib.hasSuffix ".home.arpa" cfg.domain;
 				message = "services.unix-mail-redux.domain must remain beneath home.arpa";
@@ -420,6 +434,9 @@ in
 					POST_TRUST_UNSIGNED_HUMAN_MAIL =
 						lib.boolToString cfg.trustUnsignedHumanMail;
 				POST_HERDR = cfg.herdrCommand;
+				LLMSEND_HERDR = cfg.herdrCommand;
+				POST_HERDR_WAKE = if cfg.herdrWakeCommand == null then "" else cfg.herdrWakeCommand;
+				POST_TERMINAL_WAKE_PROJECTS = lib.concatStringsSep "," cfg.terminalWakeProjects;
 				HERDR_SOCKET_PATH = cfg.herdrSocket;
 				POST_MAILBOX_ROUTES = builtins.toJSON cfg.mailboxRoutes;
 				POST_WAKE_PROJECTS = lib.concatStringsSep "," cfg.wakeProjects;

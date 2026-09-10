@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -u
+if [ "$#" -ne 9 ] || [ "$1" != 'wT:p1' ] || [ "$2" != --wake ] ||
+   [ "$3" != '/test space/inbox/note.md' ] || [ "$4" != --service-socket ] ||
+   [ "$5" != '/test space/herdr.sock' ] || [ "$6" != --expect-session ] ||
+   [ "$7" != 'native-id' ] || [ "$8" != --timeout ] || [ "$9" != 20 ]; then
+	printf '%s\n' '{"status":"error","reason":"argument boundaries changed"}'
+	exit 2
+fi
+printf '%s\n' '{"status":"activity-observed","reason":"fixture arguments verified"}'

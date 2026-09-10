@@ -2,8 +2,10 @@
 	description = "Tailnet-local Unix mail for humans and agents";
 
 	inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+	inputs.llmsend.url = "github:pmarreck/llmsend/yolo";
+	inputs.llmsend.inputs.nixpkgs.follows = "nixpkgs";
 
-	outputs = { self, nixpkgs }:
+	outputs = { self, nixpkgs, llmsend }:
 		let
 			systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
 			platformLabels = {
@@ -20,7 +22,11 @@
 				lua.luv
 			]);
 		in {
-			nixosModules.default = import ./nix/module.nix;
+			nixosModules.default = { pkgs, lib, ... }: {
+				imports = [ ./nix/module.nix ];
+				services.unix-mail-redux.herdrWakeCommand = lib.mkDefault
+					"${llmsend.packages.${pkgs.stdenv.hostPlatform.system}.notifySession}/bin/llmsend-notify-session";
+			};
 			packages = forAllSystems (system: {
 				default = postFor system;
 				post = postFor system;

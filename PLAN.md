@@ -346,3 +346,12 @@
       use.
       Completed 2026-08-28 09:04 EDT: `/run/current-system/sw/bin/post` is live;
       the README documents `alias m=post` without imposing it.
+- [x] Wire authorized automatic Herdr mail wakes through the guarded llmsend
+      helper, preserving ANSI, drafts, native conversation identity and durable
+      attempt records. Test deferred/uncertain results, bounded workers, then
+      deploy only the watcher without restarting agents (Peter, 2026-09-10).
+      Implementation tested with injected clocks, real child processes, and the
+      SMTP/LMTP/IMAP/S/MIME VM. Owner-private socket mode also verified against
+      an actual kernel Unix socket. No mail body is typed and no read flag changed.
+- [ ] Activate the pinned watcher on Thelio; prove automatic email-to-agent wake
+      and an email acknowledgment in the same native conversation.

@@ -1,5 +1,26 @@
 {
   "nodes": {
+    "llmsend": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789076594,
+        "narHash": "sha256-ltPwUNdquLuyiqOlzTkqmCvO+QbRah7ohB7xnsLf4e4=",
+        "owner": "pmarreck",
+        "repo": "llmsend",
+        "rev": "e983780e5c2a1876935a5e848398e2b9bfa06266",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pmarreck",
+        "ref": "yolo",
+        "repo": "llmsend",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1787736819,
@@ -18,6 +39,7 @@
     },
     "root": {
       "inputs": {
+        "llmsend": "llmsend",
         "nixpkgs": "nixpkgs"
       }
     }

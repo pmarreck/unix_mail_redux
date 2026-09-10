@@ -23,6 +23,8 @@ let
 					trustUnsignedHumanMail = true;
 						mailboxRoutes = { einstein = "/home/operator"; };
 					wakeProjects = [ "*" ];
+					terminalWakeProjects = [ "validate" ];
+					herdrWakeCommand = "/opt/test/guarded-wake";
 				};
 			}
 		];
@@ -62,6 +64,10 @@ assert builtins.fromJSON cfg.systemd.services.unix-mail-redux-watch.environment.
 assert !(cfg.systemd.services.unix-mail-redux-watch.environment ? POST_TMUX);
 assert !(cfg.systemd.services.unix-mail-redux-watch.environment ? HERDR_ENV);
 assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_WAKE_PROJECTS == "*";
+assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_TERMINAL_WAKE_PROJECTS == "validate";
+assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_HERDR_WAKE == "/opt/test/guarded-wake";
+assert cfg.systemd.services.unix-mail-redux-watch.environment.LLMSEND_HERDR == mail.herdrCommand;
+assert options.services.unix-mail-redux.terminalWakeProjects.default == [];
 assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_HUMAN_ADDRESS ==
 	"peter@agents.home.arpa";
 assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_TRUST_UNSIGNED_HUMAN_MAIL ==

@@ -126,6 +126,10 @@ if parsed.verb == "watch" then
 		herdr = os.getenv("POST_HERDR") or "herdr",
 		routes = require("cjson").decode(os.getenv("POST_MAILBOX_ROUTES") or "{}"),
 		authorized = authorized,
+		terminal_authorized = parsed.wake == false and {} or
+			watch_runtime.parse_authorized(os.getenv("POST_TERMINAL_WAKE_PROJECTS") or ""),
+		wake_command = os.getenv("POST_HERDR_WAKE"),
+		socket = os.getenv("HERDR_SOCKET_PATH"),
 		cooldown = positive_number(
 			os.getenv("POST_WAKE_COOLDOWN_SECONDS"),
 			"POST_WAKE_COOLDOWN_SECONDS",

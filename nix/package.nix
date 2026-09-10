@@ -6,6 +6,7 @@
 	luajit,
 	himalaya,
 	openssl,
+	coreutils,
 }:
 
 let
@@ -56,6 +57,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 		cp src/*.lua "$out/share/unix-mail-redux/"
 		makeWrapper "${runtimeLua}/bin/luajit" "$out/bin/post" \
 			--add-flags "$out/share/unix-mail-redux/post.lua" \
+			--prefix PATH ':' "${lib.makeBinPath [ coreutils ]}" \
 			--prefix LUA_PATH ';' "$out/share/unix-mail-redux/?.lua" \
 			--set-default POST_HIMALAYA "${lib.getExe himalaya}" \
 			--set POST_LIBCRYPTO "${lib.getLib openssl}/lib/libcrypto${stdenvNoCC.hostPlatform.extensions.sharedLibrary}"

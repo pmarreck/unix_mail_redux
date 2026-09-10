@@ -43,6 +43,7 @@ local function defaults(config)
 			return value:gsub("([+-]%d%d)(%d%d)$", "%1:%2")
 		end,
 		write = M.write_notice,
+		wakes = function(tasks) return require("wake_workers").step(config, tasks) end,
 		agents = function()
 			local result = process.run({ config.herdr, "agent", "list" }, { capture = true })
 			if result.rc ~= 0 then return {} end
@@ -63,7 +64,8 @@ function M.run_once(config, dependencies)
 	local deps = dependencies or defaults(config)
 	local deliveries = deps.scan(config.maildir)
 	local old = deps.load(config.state_file)
-	local state = { version = 1, messages = {}, last_wake = old.last_wake or {} }
+	local state = { version = 1, messages = {}, last_wake = old.last_wake or {}, wakes = {} }
+	local wake_tasks = {}
 	local groups, projects = {}, {}
 	for _, delivery in ipairs(deliveries) do
 		local project, key = delivery.project, delivery.project .. "\0" .. delivery.key
@@ -79,7 +81,7 @@ function M.run_once(config, dependencies)
 		local pending, notice_due = false, false
 		for _, key in ipairs(groups[project]) do
 			local record = state.messages[key]
-			pending = pending or not record.bridged_at or target and record.bridge_cwd ~= target.cwd
+			pending = pending or not record.bridged_at or not record.note_path or target and record.bridge_cwd ~= target.cwd
 			notice_due = notice_due or not record.herdr_noticed_at or now - record.herdr_noticed_at >= config.notice_retry
 		end
 		local allowed = config.authorized[project] or config.authorized["*"]
@@ -91,6 +93,7 @@ function M.run_once(config, dependencies)
 				for _, key in ipairs(groups[project]) do
 					state.messages[key].bridged_at = now
 					state.messages[key].bridge_cwd = target.cwd
+					state.messages[key].note_path = path
 				end
 				deps.report("mail notice delivered for " .. project .. ": " .. path)
 			else deps.report("mail notice deferred for " .. project .. ": " .. tostring(path)) end
@@ -101,8 +104,39 @@ function M.run_once(config, dependencies)
 				deps.report("Herdr notified: " .. project .. " (" .. #groups[project] .. " unread)")
 			end
 		end
+		local wake_allowed = config.terminal_authorized or {}
+		local agent = target and target.agent
+		if allowed and (wake_allowed[project] or wake_allowed["*"]) and agent and agent.pane_id
+			and agent.agent_session and agent.agent_session.value then
+			for _, message_key in ipairs(groups[project]) do
+				local note = state.messages[message_key].note_path
+				if note then
+					local key = note .. "\0" .. agent.agent_session.value
+					local record = (old.wakes or {})[key] or {}
+					state.wakes[key] = record
+					local retryable = not record.status or record.status=="deferred" or record.status=="error"
+					local idle = agent.agent_status=="idle" or agent.agent_status=="done"
+					if record.status=="running" or retryable and idle and
+						(not record.checked_at or now-record.checked_at >= (config.cooldown or 60)) then
+						wake_tasks[key] = {key=key, pane=agent.pane_id, session=agent.agent_session.value, note=note, project=project}
+					end
+				end
+			end
+		end
 	end
+	-- Persist the bridge before a worker can type. Restarting must reuse this
+	-- exact note, whose content/native-session dedup lives in the wake helper.
 	deps.save(config.state_file, state)
+	if deps.wakes then
+		for key, result in pairs(deps.wakes(wake_tasks)) do
+			local prior = state.wakes[key] or {}
+			if prior.status ~= result.status or prior.reason ~= result.reason then
+				deps.report("Herdr mail wake " .. wake_tasks[key].project .. ": " .. result.status .. " (" .. (result.reason or "") .. ")")
+			end
+			state.wakes[key] = {status=result.status, reason=result.reason, checked_at=now}
+		end
+		deps.save(config.state_file, state)
+	end
 	return state
 end
 return M
