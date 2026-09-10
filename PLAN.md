@@ -353,5 +353,19 @@
       Implementation tested with injected clocks, real child processes, and the
       SMTP/LMTP/IMAP/S/MIME VM. Owner-private socket mode also verified against
       an actual kernel Unix socket. No mail body is typed and no read flag changed.
-- [ ] Activate the pinned watcher on Thelio; prove automatic email-to-agent wake
+- [x] Activate the pinned watcher on Thelio; prove automatic email-to-agent wake
       and an email acknowledgment in the same native conversation.
+      Completed 2026-09-10 17:53 EDT. Deployed code 39702a7 with llmsend e983780;
+      Thelio configuration commit 5d23d7d. Full 21-file host suite passed;
+      mailer had 82 unit and 20 integration cases plus CLI/contract suites and
+      SMTP/LMTP/IMAP/S/MIME VM checks. Both code commits passed exact Mechatron CI.
+      GitHub's initial mailer webhook delivery failed EOF; exact-event redelivery
+      returned 200 and CI succeeded. No Herdr or agent restart, no reboot.
+      At 17:50:39 EDT the daemon wrote notices and started two guarded workers;
+      both reported activity-observed at 17:50:41. Codex glob replied by email
+      at 17:51:07 with AUTO-MAIL-CODEX-ACK-20260910 (Einstein mailbox ID 11).
+      Grok difz replied at 17:53:09 with AUTO-MAIL-GROK-ACK-20260910 (ID 12).
+      Native IDs remained 01a0451a-1d32-7d13-8224-9f490782109e (Codex) and
+      01a06ec0-02c4-7ff3-8204-5a87fcdb6930 (Grok). Both notices were processed;
+      replies remain in IMAP marked Seen. The watcher remained active with
+      NRestarts=0 and roughly 3-8 MiB of cgroup memory after the test.

@@ -97,3 +97,13 @@ Neither a written notice nor a successful toast is a read acknowledgment.
 
 The obsolete experimental terminal client remains documented in
 [TMUX_WAKE.md](TMUX_WAKE.md) for archaeology. It is not used by `post watch`.
+
+## Live verification
+
+On 2026-09-10, Thelio's deployed watcher delivered test mail to existing Codex
+and Grok sessions at 17:50:39 EDT. Both began processing by 17:50:41 without a
+manual Enter or session restart. Codex returned the requested acknowledgment
+through SMTP at 17:51:07; Grok returned its acknowledgment at 17:53:09. The
+reply-to headers matched the original test messages. Longer model response time
+did not cause the watcher to resend the prompt. `PLAN.md` retains the commit,
+native-session and mailbox evidence.
