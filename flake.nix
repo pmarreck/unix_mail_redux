@@ -60,10 +60,7 @@
 						test -s root-ca/root-ca-key.pem
 						test -s root-ca/root-ca.pem
 						test -s root-ca/root-ca.cer
-						${nixpkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-							post-tmux-wake --help | ${pkgs.gnugrep}/bin/grep -Fqx \
-								'usage: post-tmux-wake --session NAME --pane ID --expected-cursor-y ROW --expected-cursor-line TEXT --message TEXT [--tmux PATH] [--socket PATH]'
-						''}
+						test ! -e ${postFor system}/bin/post-tmux-wake
 						touch "$out"
 					'';
 				} // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {

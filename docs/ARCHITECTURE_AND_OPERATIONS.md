@@ -36,7 +36,7 @@ flowchart LR
 	M[Maildir]
 	I[Dovecot IMAPS :993 or tailnet-only IMAP :143]
 	W[post watcher]
-	N[tmux notice or safe agent wake]
+	N[Herdr toast and durable agent inbox notice]
 
 	H --> T
 	P --> T
@@ -122,25 +122,14 @@ its clients as supporting standards-based IMAP accounts.
 
 ## Agent notification behavior
 
-The watcher maps a mailbox to exactly one live tmux pane by a unique project
-directory basename or session name. Ambiguity causes no terminal input.
+The watcher resolves a mailbox through a unique Herdr agent name/cwd basename
+or an explicit directory route. It writes a durable, fixed-content inbox notice
+and shows a Herdr toast. Application-owned inbox monitors/hooks expose the
+notice; the watcher never types, changes focus or attaches a temporary client.
 
-- An attached human client receives a tmux status notice. The watcher sends no
-  input to that session.
-- Mail bodies are never copied into an agent prompt. Any active wake uses a
-  fixed program-generated sentence telling the agent to inspect its mailbox.
-- Claude Code and Grok may be woken through a short-lived real tmux client only
-  after the prompt and attachment gates pass.
-- Codex 0.153.0 is passive by default. A live detached test found that its TUI
-  could accept the wake text and then interrupt the conversation when the
-  temporary client detached. A deployment may explicitly accept that risk
-  with `allowDetachedCodexWake = true`; prompt and attached-human gates still
-  apply. `codex queue` accepted a queued message but did not start an idle turn
-  in the tested local-writer topology. A native app-server start event remains
-  under investigation.
-
-The terminal protocol investigation and test design are documented in
-[TMUX_WAKE.md](TMUX_WAKE.md).
+See [HERDR_MAIL.md](HERDR_MAIL.md) for routing, persistence, configuration and
+the remaining idle-Codex/Grok wake limitations. The former tmux experiment is
+retained in [TMUX_WAKE.md](TMUX_WAKE.md), not used in the current watcher.
 
 ## Trust and instruction authority
 
@@ -197,8 +186,7 @@ Add the repository as a flake input and import its module:
 						humanLocalPart = "operator";
 						tailscaleDomain = "mail-host.example-tailnet.ts.net";
 						wakeProjects = [ "*" ];
-						# Leave false unless the Codex interruption risk is accepted.
-						allowDetachedCodexWake = false;
+						herdrCommand = "/etc/profiles/per-user/operator/bin/herdr";
 					};
 				})
 			];
@@ -210,9 +198,9 @@ Add the repository as a flake input and import its module:
 The module installs `post`, configures local-only Postfix delivery and Dovecot,
 opens ports 143, 465, and 993 only on `tailscale0`, creates mutable state
 outside the Nix store, obtains a Tailscale TLS certificate, and checks renewal
-daily. `wakeProjects = [ ]` disables terminal wake authorization while keeping
-delivery and notices. `allowDetachedCodexWake` defaults to false because the
-short-lived client has interrupted Codex 0.153.0 turns. `enableWatcher = false`
+daily. `wakeProjects = [ ]` disables durable agent inbox notices while keeping
+delivery and Herdr toasts. `allowDetachedCodexWake` is retired and has no effect.
+`enableWatcher = false`
 disables the watcher entirely.
 
 The Tailscale account must permit `tailscale cert` for the configured MagicDNS
@@ -269,8 +257,8 @@ Common failures:
 - Authentication fails after changing the password file: restart
   `unix-mail-redux-credentials.service`, then Dovecot and Postfix.
 - Mail arrives but no agent reacts: check `post --as PROJECT list`, the watcher
-  journal, exact tmux session/project uniqueness, attachment state, and whether
-  the harness currently supports active wake.
+  journal, Herdr agent/project uniqueness or explicit routes, and the installed
+  application inbox monitor/hooks. See HERDR_MAIL.md for idle-wake boundaries.
 - The watcher restarts: treat that as a defect. A human attachment or uncertain
   wake is a successful deferral and must not cause a restart loop.
 

@@ -47,7 +47,7 @@ post to validate --as peter \
 	--subject "Please pin the release" \
 	--body "The candidate build passed."
 
-# A unique tmux session name is also addressable, including Einstein.
+# Named mailboxes are addressable, including Einstein.
 post to einstein --as peter \
 	--subject "Status check" \
 	--body "Please inspect the project fleet."
@@ -94,14 +94,18 @@ Tailscale's encrypted tunnel. Tailscale must be connected before refreshing.
 IMAPS on 993 remains available for clients that complete its TLS handshake.
 Internet delivery and Internet relay are deliberately disabled.
 
-Agent wakeups use a short-lived real tmux terminal client because Codex ignores
-Return while its pane is detached and unfocused. The measured cause, failed
-approaches, and cleanup guarantees are in
-[`docs/TMUX_WAKE.md`](docs/TMUX_WAKE.md).
+The watcher discovers agents in Herdr by unique agent name or project-directory
+basename. Explicit `mailboxRoutes` support aliases such as Einstein and offline
+projects. It writes fixed-content `inbox/*.frontmatter.md` notices for the existing
+LLMsend application monitors/hooks and emits a Herdr toast. It never types into
+an agent's terminal, starts a client or changes focus.
 
-When a human is attached, the watcher never types. It shows a tmux status-line
-notice until the next keypress. A uniquely matching project-directory basename
-or tmux session name selects the recipient; ambiguous matches receive no input.
+Claude's installed inbox monitor can wake an idle session; Codex prompt/tool
+hooks expose notices when that session next acts. A standalone idle Codex TUI
+still needs a human turn or an explicitly supervised native Herdr prompt.
+Toast delivery alone does not mean an agent read mail. See
+[Herdr mail notifications](docs/HERDR_MAIL.md) for configuration, persistence,
+limitations and the older tmux experiment.
 
 See `PLAN.md` for the tested delivery milestones and remaining live-client
 verification.

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -u
+printf '%s|' "$@" >> "$POST_HERDR_CALLS"
+printf '\n' >> "$POST_HERDR_CALLS"
+if [[ "$*" == 'agent list' ]]; then
+	printf '{"result":{"agents":[{"name":"validate","agent":"claude","cwd":"%s","pane_id":"w1:p1"}]}}\n' "$POST_TEST_PROJECT"
+elif [[ ${1:-} == notification && ${2:-} == show ]]; then
+	printf '{"result":{"type":"notification_shown"}}\n'
+else
+	printf 'Unexpected Herdr command\n' >&2
+	exit 97
+fi

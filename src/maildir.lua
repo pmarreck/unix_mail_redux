@@ -31,14 +31,21 @@ function M.scan(root)
 			and project_from_directory(mailbox.name)
 			or nil
 		if project then
-			local new_directory = root .. "/" .. mailbox.name .. "/new"
-			for _, message in ipairs(entries(new_directory)) do
-				if message.kind == "file" then
+			local seen = {}
+			-- IMAP clients can move new -> cur without marking a message Seen.
+			-- Scan both locations and deduplicate a rename observed between scans.
+			for _, directory in ipairs({ "new", "cur" }) do
+			for _, message in ipairs(entries(root .. "/" .. mailbox.name .. "/" .. directory)) do
+				local flags = message.name:match(":2,(.*)$") or ""
+				if message.kind == "file" and not flags:find("S", 1, true)
+					and not flags:find("T", 1, true) then
 					local key = message.name:gsub(":2,.*$", "")
-					if key ~= "" then
+					if key ~= "" and not seen[key] then
+						seen[key] = true
 						table.insert(deliveries, { project = project, key = key })
 					end
 				end
+			end
 			end
 		end
 	end

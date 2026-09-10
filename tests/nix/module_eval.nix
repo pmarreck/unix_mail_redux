@@ -21,7 +21,7 @@ let
 					domain = "agents.home.arpa";
 					tailscaleDomain = "mail.example.ts.net";
 					trustUnsignedHumanMail = true;
-					allowDetachedCodexWake = true;
+						mailboxRoutes = { einstein = "/home/operator"; };
 					wakeProjects = [ "*" ];
 				};
 			}
@@ -56,15 +56,15 @@ assert cfg.systemd.services ? unix-mail-redux-credentials;
 assert cfg.systemd.services ? unix-mail-redux-tls;
 assert cfg.systemd.services ? unix-mail-redux-watch;
 assert cfg.systemd.services.unix-mail-redux-watch.serviceConfig.User == "operator";
-assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_TMUX == lib.getExe pkgs.tmux;
-assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_TMUX_WAKE ==
-	lib.getExe' mail.package "post-tmux-wake";
+assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_HERDR == "/home/operator/.nix-profile/bin/herdr";
+assert cfg.systemd.services.unix-mail-redux-watch.environment.HERDR_SOCKET_PATH == "/home/operator/.config/herdr/herdr.sock";
+assert builtins.fromJSON cfg.systemd.services.unix-mail-redux-watch.environment.POST_MAILBOX_ROUTES == { einstein = "/home/operator"; };
+assert !(cfg.systemd.services.unix-mail-redux-watch.environment ? POST_TMUX);
+assert !(cfg.systemd.services.unix-mail-redux-watch.environment ? HERDR_ENV);
 assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_WAKE_PROJECTS == "*";
 assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_HUMAN_ADDRESS ==
 	"peter@agents.home.arpa";
 assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_TRUST_UNSIGNED_HUMAN_MAIL ==
-	"true";
-assert cfg.systemd.services.unix-mail-redux-watch.environment.POST_ALLOW_DETACHED_CODEX_WAKE ==
 	"true";
 assert options.services.unix-mail-redux.allowDetachedCodexWake.default == false;
 assert cfg.systemd.timers ? unix-mail-redux-tls;

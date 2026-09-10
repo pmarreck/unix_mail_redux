@@ -8,7 +8,7 @@ local args = require("args")
 local app = require("app")
 local process = require("process")
 local review = require("review")
-local watch_runtime = require("watch_runtime")
+local watch_runtime = require("herdr_watch")
 
 local argv = {}
 for index = 1, #arg do
@@ -123,10 +123,8 @@ if parsed.verb == "watch" then
 			or "peter@agents.home.arpa",
 		trust_unsigned_human_mail =
 			os.getenv("POST_TRUST_UNSIGNED_HUMAN_MAIL") == "true",
-		allow_codex_terminal_wake =
-			os.getenv("POST_ALLOW_DETACHED_CODEX_WAKE") == "true",
-		tmux = os.getenv("POST_TMUX") or "tmux",
-		wake_client = os.getenv("POST_TMUX_WAKE") or "post-tmux-wake",
+		herdr = os.getenv("POST_HERDR") or "herdr",
+		routes = require("cjson").decode(os.getenv("POST_MAILBOX_ROUTES") or "{}"),
 		authorized = authorized,
 		cooldown = positive_number(
 			os.getenv("POST_WAKE_COOLDOWN_SECONDS"),

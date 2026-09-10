@@ -10,6 +10,9 @@
   the configured authority policy.
 - A wake may submit input only after mechanically proving an authorized agent
   is idle at an empty prompt. Ambiguity defers the wake.
+- The automatic Herdr mail watcher never submits terminal input. It writes
+  fixed-content inbox notices for application monitors/hooks. A separate
+  owner-authorized manual wake is an advisory control, not an atomic draft lock.
 - No public MX, Internet relay, or listener outside loopback and the Tailscale
   firewall boundary is permitted.
 - Credentials and private TLS keys never enter Git or the Nix store.

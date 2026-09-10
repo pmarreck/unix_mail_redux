@@ -128,19 +128,34 @@ in
 			description = "Watch new Maildir deliveries and notify matching agent sessions.";
 		};
 
+		herdrCommand = lib.mkOption {
+			type = lib.types.str;
+			default = "${ownerHome}/.nix-profile/bin/herdr";
+			description = "Absolute path to the installed Herdr CLI; never starts a server.";
+		};
+		herdrSocket = lib.mkOption {
+			type = lib.types.str;
+			default = "${ownerHome}/.config/herdr/herdr.sock";
+			description = "Explicit local Herdr server socket owned by the mail operator.";
+		};
+		mailboxRoutes = lib.mkOption {
+			type = lib.types.attrsOf lib.types.str;
+			default = { };
+			description = "Explicit mailbox-to-project-directory routes, including aliases and offline projects.";
+		};
+
 		wakeProjects = lib.mkOption {
 			type = lib.types.listOf (lib.types.strMatching "([*]|[a-z0-9][a-z0-9_-]{0,62})");
 			default = [ ];
-			description = "Projects authorized for empty-prompt wake input; * authorizes all projects.";
+			description = "Mailboxes authorized for durable agent inbox notices; * authorizes all. No terminal input is sent.";
 		};
 
 		allowDetachedCodexWake = lib.mkOption {
 			type = lib.types.bool;
 			default = false;
 			description = ''
-				Allow the short-lived PTY terminal path to wake detached Codex
-				sessions. Codex 0.153.0 may interrupt the started turn when that
-				client detaches, so deployments must accept this measured risk.
+				Retired tmux option, retained for configuration migration only.
+				The Herdr watcher never submits terminal input, regardless of this value.
 			'';
 		};
 
@@ -404,10 +419,9 @@ in
 					POST_HUMAN_ADDRESS = "${cfg.humanLocalPart}@${cfg.domain}";
 					POST_TRUST_UNSIGNED_HUMAN_MAIL =
 						lib.boolToString cfg.trustUnsignedHumanMail;
-					POST_ALLOW_DETACHED_CODEX_WAKE =
-						lib.boolToString cfg.allowDetachedCodexWake;
-					POST_TMUX = lib.getExe pkgs.tmux;
-				POST_TMUX_WAKE = lib.getExe' cfg.package "post-tmux-wake";
+				POST_HERDR = cfg.herdrCommand;
+				HERDR_SOCKET_PATH = cfg.herdrSocket;
+				POST_MAILBOX_ROUTES = builtins.toJSON cfg.mailboxRoutes;
 				POST_WAKE_PROJECTS = lib.concatStringsSep "," cfg.wakeProjects;
 				POST_WATCH_INTERVAL_SECONDS = toString cfg.watchIntervalSeconds;
 				POST_WAKE_COOLDOWN_SECONDS = toString cfg.wakeCooldownSeconds;

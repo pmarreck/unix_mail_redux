@@ -1,5 +1,25 @@
 # UNIX MAIL REDUX plan
 
+## Herdr migration (Peter, 2026-09-10)
+
+- [x] Implement replacement of the tmux-only mail watcher discovery/notification path
+      with Herdr; preserve IMAP, SMTP, credentials, mailboxes and read flags.
+- [x] Inspect Herdr's native inter-agent messaging before inventing transport.
+      Distinguish a submitted terminal prompt from application-owned delivery.
+- [x] Investigate longer-lived/persistent Herdr notifications. Keep mail and
+      fixed-content inbox notices durable even when a toast disappears.
+- [ ] Test routing, ambiguity, deduplication, restart recovery and absence of
+      terminal draft mutation. Verify real mail delivery and live notification.
+- [ ] Package and deploy only this service change; preserve unrelated Nix work.
+      Code verified 2026-09-10: 78 unit tests, 17 integration tests, CLI and
+      legacy terminal-regression suites pass. Nix package tests, module checks
+      and SMTP/IMAP/S/MIME NixOS VM pass. Herdr 0.8.2 custom toast lifetime is
+      hard-coded at 5 seconds; no native message mailbox/history API exists.
+      Agent notices use the existing application monitors/hooks, with no
+      automatic terminal submission. Standalone idle Codex and Grok wake
+      remain explicitly incomplete. Deployment/live verification below.
+
+
 - [x] Add an explicit, safe-by-default deployment option that permits the
       tested PTY wake path for detached Codex sessions. Peter accepted the
       measured Codex interruption risk by email on 2026-09-03 because reliable

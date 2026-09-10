@@ -39,11 +39,14 @@ describe("Maildir delivery discovery", function()
 		mkdir(root .. "/.Sent/new")
 		touch(root .. "/.Agents.validate/new/unique-1:2,")
 		touch(root .. "/.Agents.validate/cur/already-read:2,S")
+		touch(root .. "/.Agents.validate/cur/still-unread:2,")
+		touch(root .. "/.Agents.validate/cur/deleted:2,T")
 		touch(root .. "/.Agents.rarz/new/unique-2")
 		touch(root .. "/.Sent/new/outbound")
 
 		assert.same({
 			{ project = "rarz", key = "unique-2" },
+			{ project = "validate", key = "still-unread" },
 			{ project = "validate", key = "unique-1" },
 		}, maildir.scan(root))
 		remove_tree(root)
