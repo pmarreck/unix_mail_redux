@@ -31,7 +31,8 @@ The watcher writes a fixed-content `llmsend/v1` frontmatter note in the target
 inbox. Existing LLMsend monitors/hooks tell the agent to run `post list --as NAME`
 and `post read ID --as NAME`. Replies use `post reply ID --as NAME --body TEXT`.
 The agent trashes the generated notice after processing mail. Trashing the notice
-does not mark mail read; `post read` does. New arrivals update the notice.
+does not mark mail read; `post read` does. Each new arrival batch gets a distinct
+notice, so processing an older notice cannot delete a concurrent new arrival.
 Delivered notices are deduplicated across watcher restarts. Legacy tmux wake
 state does not suppress a new Herdr-era notice.
 

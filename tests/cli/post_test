@@ -169,13 +169,22 @@ mkdir -p "$watch_sandbox/mail/.Agents.validate/new"
 touch "$watch_sandbox/mail/.Agents.validate/new/mail-1"
 mkdir -p "$watch_sandbox/project"
 : > "$watch_sandbox/herdr.calls"
+watch_cli() {
+	"$project_root/bin/post" "$@" 2> "$watch_sandbox/stderr"
+	local status=$?
+	# The private atomic-write suffix is intentionally nondeterministic.
+	sed -E 's/mail-validate-[A-Za-z0-9]+\.frontmatter\.md/mail-validate.frontmatter.md/' "$watch_sandbox/stderr" >&2
+	return "$status"
+}
+export -f watch_cli
+export project_root watch_sandbox
 expect "one-shot delivery watcher" 0 "" \
 	"post: mail notice delivered for validate: $watch_sandbox/project/inbox/$(date +%Y-%m-%d)-from-post-watch-mail-validate.frontmatter.md
 post: Herdr notified: validate (1 unread)" \
 	env POST_HERDR="$project_root/tests/fixtures/fake_herdr" \
 	POST_HERDR_CALLS="$watch_sandbox/herdr.calls" POST_TEST_PROJECT="$watch_sandbox/project" \
 	POST_WAKE_PROJECTS=validate \
-	"$project_root/bin/post" watch --once \
+	bash -c 'watch_cli "$@"' -- watch --once \
 	--maildir "$watch_sandbox/mail" \
 	--state-file "$watch_sandbox/state/watch.json"
 watch_calls="$(cat "$watch_sandbox/herdr.calls")"
@@ -183,7 +192,13 @@ if [[ $watch_calls != *'notification|show|Mail: validate|--body|1 unread message
 	printf 'FAIL watcher omitted the side-band notice\n' >&2
 	failures=$((failures + 1))
 fi
-if [[ ! -f "$watch_sandbox/project/inbox/$(date +%Y-%m-%d)-from-post-watch-mail-validate.frontmatter.md" ]]; then
+notice_count="$(
+	set +f
+	shopt -s nullglob
+	notices=( "$watch_sandbox/project/inbox/"*-from-post-watch-mail-validate-*.frontmatter.md )
+	printf '%s' "${#notices[@]}"
+)"
+if [[ $notice_count != 1 ]]; then
 	printf 'FAIL watcher omitted the durable fixed-content notice\n' >&2
 	failures=$((failures + 1))
 fi
@@ -192,7 +207,7 @@ expect "watcher deduplicates a persisted delivery" 0 "" "" \
 	env POST_HERDR="$project_root/tests/fixtures/fake_herdr" \
 	POST_HERDR_CALLS="$watch_sandbox/herdr.calls" POST_TEST_PROJECT="$watch_sandbox/project" \
 	POST_WAKE_PROJECTS=validate \
-	"$project_root/bin/post" watch --once \
+	bash -c 'watch_cli "$@"' -- watch --once \
 	--maildir "$watch_sandbox/mail" \
 	--state-file "$watch_sandbox/state/watch.json"
 if [[ $(grep -c '^notification|' "$watch_sandbox/herdr.calls") != "$notices_before" ]]; then

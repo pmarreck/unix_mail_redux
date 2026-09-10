@@ -4,7 +4,7 @@ local bridge = require("herdr_mail")
 local M = {}
 M.parse_authorized = require("watch_runtime").parse_authorized
 
--- One fixed-name notice per mailbox/day. Never write mail bodies to a project.
+-- A distinct notice per new delivery batch. Never write mail bodies to a project.
 function M.write_notice(cwd, project, text, datetime)
 	require("identity").mailbox(project)
 	assert(datetime:match("^%d%d%d%d%-%d%d%-%d%dT"), "invalid notice datetime")
@@ -13,11 +13,10 @@ function M.write_notice(cwd, project, text, datetime)
 	local stat = uv.fs_lstat(inbox)
 	if not stat then assert(uv.fs_mkdir(inbox, 448))
 	else assert(stat.type == "directory", "recipient inbox must be a real directory") end
-	local name = datetime:sub(1, 10) .. "-from-post-watch-mail-" .. project .. ".frontmatter.md"
-	local destination = inbox .. "/" .. name
-	local previous = uv.fs_lstat(destination)
-	assert(not previous or previous.type == "file", "mail notice target is not a regular file")
 	local fd, temporary = assert(uv.fs_mkstemp(inbox .. "/.post-mail-XXXXXX"))
+	local name = datetime:sub(1, 10) .. "-from-post-watch-mail-" .. project .. "-" ..
+		temporary:match("([^/]+)$"):sub(#".post-mail-" + 1) .. ".frontmatter.md"
+	local destination = inbox .. "/" .. name
 	local ok, err = pcall(function()
 		assert(uv.fs_fchmod(fd, 384))
 		assert(uv.fs_write(fd, text, 0) == #text, "short mail notice write")
@@ -25,8 +24,11 @@ function M.write_notice(cwd, project, text, datetime)
 	end)
 	uv.fs_close(fd)
 	if not ok then uv.fs_unlink(temporary); error(err, 0) end
-	local renamed, rename_error = uv.fs_rename(temporary, destination)
-	if not renamed then uv.fs_unlink(temporary); error(rename_error, 0) end
+	-- Link publishes only complete bytes and refuses a collision atomically.
+	-- Never overwrite a notice another agent might currently be processing.
+	local renamed, rename_error = uv.fs_link(temporary, destination)
+	uv.fs_unlink(temporary)
+	if not renamed then error(rename_error, 0) end
 	return destination
 end
 

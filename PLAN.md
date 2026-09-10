@@ -8,9 +8,9 @@
       Distinguish a submitted terminal prompt from application-owned delivery.
 - [x] Investigate longer-lived/persistent Herdr notifications. Keep mail and
       fixed-content inbox notices durable even when a toast disappears.
-- [ ] Test routing, ambiguity, deduplication, restart recovery and absence of
+- [x] Test routing, ambiguity, deduplication, restart recovery and absence of
       terminal draft mutation. Verify real mail delivery and live notification.
-- [ ] Package and deploy only this service change; preserve unrelated Nix work.
+- [x] Package and deploy the Herdr mail bridge; preserve unrelated Nix work.
       Code verified 2026-09-10: 78 unit tests, 17 integration tests, CLI and
       legacy terminal-regression suites pass. Nix package tests, module checks
       and SMTP/IMAP/S/MIME NixOS VM pass. Herdr 0.8.2 custom toast lifetime is
@@ -18,6 +18,13 @@
       Agent notices use the existing application monitors/hooks, with no
       automatic terminal submission. Standalone idle Codex and Grok wake
       remain explicitly incomplete. Deployment/live verification below.
+      Activated 2026-09-10 15:57 EDT. Existing code/Einstein unread mail reached
+      Codex's inbox hook without terminal input. At 15:58 EDT corruption_probe
+      read the test mail via its Claude monitor and replied by email; Einstein
+      received and read that reply through the bridge. Real SMTP/IMAP round trip
+      and application awareness are proven; idle Codex/Grok wake is not.
+- [ ] Deploy the follow-up concurrent-arrival protection: publish each new batch
+      under a unique filename, so trashing a prior notice cannot delete it.
 
 
 - [x] Add an explicit, safe-by-default deployment option that permits the

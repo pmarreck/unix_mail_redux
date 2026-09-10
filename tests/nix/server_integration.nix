@@ -82,6 +82,12 @@ machine.wait_for_open_port(465)
 machine.wait_for_open_port(993)
 
 password = machine.succeed("cat /home/operator/.config/post/password").strip()
+# Swaks reparses a leading '+' password as an option, even with --password=.
+# Its documented netrc path avoids that parser; this is private VM test data.
+machine.succeed(
+    "umask 077; printf '%s\\n' 'machine 127.0.0.1 login operator password "
+    + password + "' > /root/.netrc"
+)
 plain_imap = machine.succeed(
     "curl --silent --show-error "
     "--user operator:'" + password + "' "
@@ -90,7 +96,7 @@ plain_imap = machine.succeed(
 assert "INBOX" in plain_imap
 send = (
     "swaks --server 127.0.0.1:465 --tls-on-connect "
-    "--auth LOGIN --auth-user operator --auth-password='" + password + "' "
+    "--auth LOGIN --auth-user operator --auth-password "
     "--from validate@agents.home.arpa "
     "--to sctui_rust@agents.home.arpa "
     "--header 'Subject: Integration delivery' "
