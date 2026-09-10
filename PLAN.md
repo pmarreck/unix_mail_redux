@@ -23,8 +23,15 @@
       read the test mail via its Claude monitor and replied by email; Einstein
       received and read that reply through the bridge. Real SMTP/IMAP round trip
       and application awareness are proven; idle Codex/Grok wake is not.
-- [ ] Deploy the follow-up concurrent-arrival protection: publish each new batch
+- [x] Deploy the follow-up concurrent-arrival protection: publish each new batch
       under a unique filename, so trashing a prior notice cannot delete it.
+      Completed 2026-09-10 16:06 EDT, code 4e76264, Mechatron exact-commit green.
+      Final live smoke mail reached Einstein through a uniquely named notice
+      and was read. Thelio's 21 test files pass; configuration pin/routes are
+      committed as 4fd0781, without including existing staged Herdr-runtime work.
+      Its five previously unpushed UPS commits remain unpublished with that
+      configuration commit. Old processed notices were moved to ~/.Trash;
+      messages themselves remain in IMAP. Usage/caveats emailed to Peter.
 
 
 - [x] Add an explicit, safe-by-default deployment option that permits the
