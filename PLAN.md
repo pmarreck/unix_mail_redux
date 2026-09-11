@@ -1,5 +1,15 @@
 # UNIX MAIL REDUX plan
 
+## Einstein missed wake (2026-09-11)
+
+- [ ] Deploy the helper fix for Codex's unboxed prompt. Mail arrived at
+      20:19 EDT September 10; notices were durable, but observation attempts
+      deferred for hours. The old classifier required background styling.
+      The exact observed ANSI layout now has a regression; all 160 helper
+      assertions and Linux flake checks pass. Current live read-only inspection
+      recognizes the composer. Keep the separate idle end-to-end self-wake
+      verification open rather than generalizing from other sessions' success.
+
 ## Herdr migration (Peter, 2026-09-10)
 
 - [x] Implement replacement of the tmux-only mail watcher discovery/notification path

@@ -107,3 +107,14 @@ through SMTP at 17:51:07; Grok returned its acknowledgment at 17:53:09. The
 reply-to headers matched the original test messages. Longer model response time
 did not cause the watcher to resend the prompt. `PLAN.md` retains the commit,
 native-session and mailbox evidence.
+
+On 2026-09-11, Peter reported a missed Einstein wake for mail delivered the
+previous evening. Delivery and the watcher were healthy, but repeated attempts
+deferred: Einstein's Codex composer had no background-colored box, which the
+detector required. The helper now also recognizes the observed bold prompt and
+bottom-anchored status footer, retaining intervening wrapped draft text. A
+failing regression reproduced the false negative before the fix; a read-only
+check now recognizes that live layout. This does not yet prove an idle email
+round trip in Einstein's own session. Unknown or clipped layouts still defer.
+Deferred results now distinguish `composer-unrecognized`, `human-draft`,
+`scrollback`, agent state, and unstable or unavailable snapshots.

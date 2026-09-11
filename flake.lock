@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789076594,
-        "narHash": "sha256-ltPwUNdquLuyiqOlzTkqmCvO+QbRah7ohB7xnsLf4e4=",
+        "lastModified": 1789101289,
+        "narHash": "sha256-HJZ/aj6+MJSyyp0fRjug1ssKXa+XU/gooXMLG7CHaco=",
         "owner": "pmarreck",
         "repo": "llmsend",
-        "rev": "e983780e5c2a1876935a5e848398e2b9bfa06266",
+        "rev": "f9e92aaece5874ecad993f2915c752ed9988857e",
         "type": "github"
       },
       "original": {
