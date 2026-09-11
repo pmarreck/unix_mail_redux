@@ -2,13 +2,21 @@
 
 ## Einstein missed wake (2026-09-11)
 
-- [ ] Deploy the helper fix for Codex's unboxed prompt. Mail arrived at
+- [x] Deploy the helper fix for Codex's unboxed prompt. Mail arrived at
       20:19 EDT September 10; notices were durable, but observation attempts
       deferred for hours. The old classifier required background styling.
       The exact observed ANSI layout now has a regression; all 160 helper
       assertions and Linux flake checks pass. Current live read-only inspection
       recognizes the composer. Keep the separate idle end-to-end self-wake
       verification open rather than generalizing from other sessions' success.
+      Activated 2026-09-11 approximately 00:37 EDT, Nix configuration commit
+      0235453, mailer 8c305ea, helper f9e92aa. Only the mail watcher was stopped
+      and restarted; no agent or Herdr restart. Both exact commits passed CI.
+      The deployed helper's service-socket dry run recognizes Einstein's
+      315x69 unboxed composer as empty. Peter's email was read and replied to;
+      its processed notice was trashed without deleting mail.
+- [ ] Verify a fresh email wakes Einstein while idle after this turn ends.
+      Do not substitute the working-session dry run for that evidence.
 
 ## Herdr migration (Peter, 2026-09-10)
 
