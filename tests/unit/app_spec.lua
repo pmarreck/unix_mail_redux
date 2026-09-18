@@ -1,6 +1,15 @@
 local app = require("app")
 
 describe("post application planning", function()
+	it("carries repeated attachments through new and reply plans", function()
+		for _, verb in ipairs({"to", "reply"}) do
+			local plan = app.plan({verb=verb, identity="einstein", recipient="peter", id="42",
+				subject="s", body="b", attachments={"/tmp/one", "/tmp/two"}},
+				{config={executable="himalaya"}, domain="example.test", human_local_part="peter"})
+			assert.same({"/tmp/one", "/tmp/two"}, plan.attachments)
+			assert.same({"--attach","/tmp/one","--attach","/tmp/two"}, {unpack(plan.argv,#plan.argv-3)})
+		end
+	end)
 	local config = {
 		executable = "himalaya",
 		config = "/etc/unix-mail-redux/himalaya.toml",

@@ -54,7 +54,25 @@ post to einstein --as peter \
 
 # Reply in the human inbox, preserving thread headers.
 post reply 42 --as peter --body "Acknowledged."
+
+# Attach one or more documents; the same option works with reply.
+post to peter --as einstein --subject "Plan for review" --body "Please review." \
+	--attachment "LICENSE_OPERATIONS.md" --attachment "MECHA_RELEASE_PLAN.md"
+post reply 42 --as peter --body "My notes are attached." --attachment=notes.md
 ```
+
+`--attachment PATH` is additive: each occurrence attaches another file in the
+given order. Both spaced and `--attachment=PATH` forms work. Filenames and
+binary contents are encoded by Himalaya as ordinary MIME attachments; paths
+are listed before confirmation. Missing, unreadable, or non-regular files fail
+before sending. Files are read at composition time, so do not edit them during
+review. A directory must first be archived if you want to send it.
+
+`--attachment -` (or `@stdin`) attaches piped bytes using a private temporary
+file named `post-stdin-...`, removed on normal completion, refusal, or errors.
+This requires an explicit `--body`, and only one attachment can consume stdin.
+Use `--yes` for a pre-approved piped send; stdin cannot also answer confirmation.
+Abrupt process termination may leave the private temporary file behind.
 
 `--yes` skips the interactive review and is intended only for an already
 reviewed message. For one-letter use in an interactive shell:

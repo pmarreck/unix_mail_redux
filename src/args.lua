@@ -92,6 +92,18 @@ function M.parse(argv)
 		elseif value == "--body" then
 			result.body = require_value(argv, index, value, "a value")
 			index = index + 1
+		elseif value == "--attachment" or value:match("^%-%-attachment=") then
+			local path = value:match("^%-%-attachment=(.*)$")
+			if path == nil then
+				path = require_value(argv, index, value, "a file path")
+				if path:match("^%-%-") then
+					error("--attachment requires a file path (use = for a leading --)", 0)
+				end
+				index = index + 1
+			end
+			if path == "" or path:find("%z") then error("--attachment requires a file path", 0) end
+			result.attachments = result.attachments or {}
+			table.insert(result.attachments, path)
 		elseif value == "-h" or value == "--help" then
 			result.verb = "help"
 		elseif value == "--about" then
@@ -111,6 +123,17 @@ function M.parse(argv)
 	result.verb = positional[1] or "list"
 	if not verbs[result.verb] then
 		error("unknown command: " .. result.verb, 0)
+	end
+	if result.attachments and result.verb ~= "to" and result.verb ~= "reply" then
+		error("--attachment is only valid with to or reply", 0)
+	end
+	local stdin_attachments = 0
+	for _, path in ipairs(result.attachments or {}) do
+		if path == "-" or path == "@stdin" then stdin_attachments = stdin_attachments + 1 end
+	end
+	if stdin_attachments > 1 then error("only one stdin attachment is allowed", 0) end
+	if stdin_attachments == 1 and not result.body then
+		error("stdin attachment requires --body (stdin cannot also supply the body)", 0)
 	end
 
 	if result.verb == "read" or result.verb == "reply" then

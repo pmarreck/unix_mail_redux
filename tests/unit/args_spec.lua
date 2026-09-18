@@ -1,6 +1,26 @@
 local args = require("args")
 
 describe("post argument parsing", function()
+	it("accumulates attachments in order with spaced and equals forms", function()
+		local parsed = args.parse({"to", "peter", "--attachment", "a b.md",
+			"--attachment=résumé.pdf", "--attachment=--odd.txt"})
+		assert.same({"a b.md", "résumé.pdf", "--odd.txt"}, parsed.attachments)
+		assert.same({"a"}, args.parse({"reply", "42", "--attachment", "a"}).attachments)
+	end)
+	it("rejects invalid attachment options without swallowing another option", function()
+		for _, argv in ipairs({
+			{"to", "peter", "--attachment"},
+			{"to", "peter", "--attachment="},
+			{"to", "peter", "--attachment", "--yes"},
+			{"list", "--attachment", "a"},
+			{"read", "42", "--attachment", "a"},
+			{"to", "peter", "--attachment", "-"},
+			{"to", "peter", "--body", "x", "--attachment", "-", "--attachment", "@stdin"},
+		}) do assert.has_error(function() args.parse(argv) end) end
+	end)
+	it("allows one stdin attachment with an explicit body", function()
+		assert.same({"-"}, args.parse({"to", "peter", "--body", "x", "--attachment=-"}).attachments)
+	end)
 	it("defaults to the current project's unread list", function()
 		assert.same({ verb = "list", format = "human" }, args.parse({}))
 	end)

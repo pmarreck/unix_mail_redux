@@ -45,23 +45,30 @@ function M.status(config, format)
 	return append(base(config, format), { "mailbox", "list" })
 end
 
-function M.compose(config, from, to, subject, format)
-	return append(base(config, format), {
+local function attach(argv, attachments)
+	for _, path in ipairs(attachments or {}) do
+		append(argv, {"--attach", path})
+	end
+	return argv
+end
+
+function M.compose(config, from, to, subject, format, attachments)
+	return attach(append(base(config, format), {
 		"message", "compose",
 		"--from", from,
 		"--to", to,
 		"--subject", subject,
 		"--save", "Sent",
 		"--send",
-	})
+	}), attachments)
 end
 
-function M.reply_candidate(config, mailbox, id, from, format)
-	return append(base(config, format), {
+function M.reply_candidate(config, mailbox, id, from, format, attachments)
+	return attach(append(base(config, format), {
 		"message", "reply", id,
 		"--mailbox", mailbox,
 		"--from", from,
-	})
+	}), attachments)
 end
 
 function M.send_candidate(config, format)

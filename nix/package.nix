@@ -37,7 +37,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 	strictDeps = true;
 	dontBuild = true;
 	doCheck = true;
-	nativeCheckInputs = [ (luajit.withPackages (lua: [ lua.busted lua.lua-cjson lua.luv ])) openssl ];
+	nativeCheckInputs = [ (luajit.withPackages (lua: [ lua.busted lua.lua-cjson lua.luv ])) openssl himalaya ];
 	checkPhase = ''
 		runHook preCheck
 		patchShebangs tests/fixtures bin

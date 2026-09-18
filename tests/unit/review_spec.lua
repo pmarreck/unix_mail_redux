@@ -1,6 +1,13 @@
 local review = require("review")
 
 describe("message review", function()
+	it("shows every attachment without rendering terminal controls in paths", function()
+		local rendered = review.render({from="a",to="b",subject="s",body="body",
+			attachments={"/tmp/a b.md", "/tmp/b\27[31m.bin"}})
+		assert.truthy(rendered:find("Attachment: /tmp/a b.md", 1, true))
+		assert.truthy(rendered:find("Attachment: /tmp/b\\x1B[31m.bin", 1, true))
+		assert.is_nil(rendered:find("\27", 1, true))
+	end)
 	it("renders a plain RFC-style candidate", function()
 		assert.are.equal(table.concat({
 			"From: unix_mail_redux@agents.home.arpa",

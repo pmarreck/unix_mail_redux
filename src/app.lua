@@ -56,13 +56,15 @@ function M.plan(parsed, context)
 			mailbox = mailbox,
 			from = from,
 			body = parsed.body,
+			attachments = parsed.attachments,
 			stdin = parsed.body,
 			argv = transport.reply_candidate(
 				context.config,
 				mailbox,
 				parsed.id,
 				from,
-				parsed.format
+				parsed.format,
+				parsed.attachments
 			),
 			send_argv = transport.send_candidate(context.config, parsed.format),
 		}
@@ -85,8 +87,9 @@ function M.plan(parsed, context)
 			to = to,
 			subject = parsed.subject,
 			body = parsed.body,
+			attachments = parsed.attachments,
 			stdin = parsed.body,
-			argv = transport.compose(context.config, from, to, parsed.subject, parsed.format),
+			argv = transport.compose(context.config, from, to, parsed.subject, parsed.format, parsed.attachments),
 		}
 	else
 		error(parsed.verb .. " is not implemented yet", 0)

@@ -12,7 +12,16 @@ function M.write_notice(cwd, project, text, datetime)
 	local inbox = root .. "/inbox"
 	local stat = uv.fs_lstat(inbox)
 	if not stat then assert(uv.fs_mkdir(inbox, 448))
-	else assert(stat.type == "directory", "recipient inbox must be a real directory") end
+	elseif stat.type == "link" then
+		-- Operator-owned aliases consolidate inboxes (HOME/inbox -> Code/inbox).
+		assert(stat.uid == uv.getuid(), "recipient inbox link must be owned by the operator")
+	end
+	inbox = assert(uv.fs_realpath(inbox), "recipient inbox target is unavailable")
+	stat = assert(uv.fs_stat(inbox))
+	assert(stat.type == "directory", "recipient inbox target must be a directory")
+	assert(stat.uid == uv.getuid(), "recipient inbox target must be owned by the operator")
+	assert(require("bit").band(stat.mode, 18) == 0,
+		"recipient inbox target must not be group/other writable")
 	local fd, temporary = assert(uv.fs_mkstemp(inbox .. "/.post-mail-XXXXXX"))
 	local name = datetime:sub(1, 10) .. "-from-post-watch-mail-" .. project .. "-" ..
 		temporary:match("([^/]+)$"):sub(#".post-mail-" + 1) .. ".frontmatter.md"

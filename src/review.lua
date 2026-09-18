@@ -9,6 +9,12 @@ function M.render(message)
 		table.insert(lines, "Cc: " .. message.cc)
 	end
 	table.insert(lines, "Subject: " .. message.subject)
+	for _, path in ipairs(message.attachments or {}) do
+		local display = path:gsub("[%z\1-\31\127]", function(char)
+			return string.format("\\x%02X", char:byte())
+		end)
+		table.insert(lines, "Attachment: " .. display)
+	end
 	table.insert(lines, "")
 	table.insert(lines, message.body)
 	table.insert(lines, "")

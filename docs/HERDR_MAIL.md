@@ -31,6 +31,12 @@ No additional Herdr server is installed or launched.
 The watcher writes a fixed-content `llmsend/v1` frontmatter note in the target
 inbox. Existing LLMsend monitors/hooks tell the agent to run `post list --as NAME`
 and `post read ID --as NAME`. Replies use `post reply ID --as NAME --body TEXT`.
+An operator-owned inbox symlink may consolidate notices into another directory,
+such as `~/inbox -> ~/Code/inbox`. Both the writer and wake helper resolve the
+destination, require operator ownership and reject group/other-writable targets.
+Individual note symlinks, broken links, and non-directory targets are refused.
+This is a same-user convenience policy, not protection from a malicious process
+already running as that user or able to replace writable ancestor directories.
 The agent trashes the generated notice after processing mail. Trashing the notice
 does not mark mail read; `post read` does. Each new arrival batch gets a distinct
 notice, so processing an older notice cannot delete a concurrent new arrival.
@@ -118,3 +124,19 @@ check now recognizes that live layout. This does not yet prove an idle email
 round trip in Einstein's own session. Unknown or clipped layouts still defer.
 Deferred results now distinguish `composer-unrecognized`, `human-draft`,
 `scrollback`, agent state, and unstable or unavailable snapshots.
+
+On 2026-09-18, consolidation of `~/inbox -> ~/Code/inbox` exposed two checks
+that incorrectly required a physical inbox directory. Regression tests now
+cover both the mail writer and helper's canonical-path validation. The repaired
+live watcher published the waiting Einstein notice at 13:23 EDT, and Codex's
+tool hook surfaced it. New mail also produced distinct notices. This proves
+mail delivery and in-turn awareness, not a new idle-wake verification.
+
+The scoped Thelio repair temporarily uses
+`/run/systemd/system/unix-mail-redux-watch.service.d/90-local-symlink-repair.conf`
+to select tested Nix packages, without activating unrelated host changes.
+It disappears on reboot. Before reboot, activate a configuration whose mailer
+and llmsend pins include these fixes. After that activation, remove only this
+runtime drop-in and reload/restart the mail watcher so later declarative updates
+are not shadowed. The operator's local state directory retains the package GC
+roots and a copy of the drop-in for rollback/reapplication.

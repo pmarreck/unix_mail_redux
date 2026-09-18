@@ -1,5 +1,22 @@
 # UNIX MAIL REDUX plan
 
+## Attachments and consolidated inbox repair (2026-09-18)
+
+- [x] Add repeatable --attachment PATH for new messages and threaded replies;
+      preserve filenames, show attachment paths for review, fail before sending
+      on missing/unreadable/non-regular files. Test actual backend MIME output.
+- [x] Reproduce symlinked inbox rejection; allow owned, non-public-writable
+      directory targets, retaining private atomic notice publication.
+- [x] Run full suite/package checks, deploy only the mail watcher update without
+      a host activation/reboot, verify delivered attachment and durable notice.
+      Completed 2026-09-18 13:25 EDT: 88 unit/25 integration tests plus CLI,
+      legacy and repository suites; Nix package/smoke/module checks pass.
+      Real SMTP/IMAP new message #32 and threaded reply #33 preserve attachments;
+      downloaded binary SHA-256 matches the source. Tool-hook notices arrive
+      through the symlink. Idle wake remains a separate, unproven check below.
+- [ ] Carry both repaired package pins into the next NixOS activation, then
+      retire the scoped runtime drop-in (see docs/HERDR_MAIL.md).
+
 ## Einstein missed wake (2026-09-11)
 
 - [x] Deploy the helper fix for Codex's unboxed prompt. Mail arrived at

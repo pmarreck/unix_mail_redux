@@ -29,7 +29,7 @@ with_input() {
 }
 
 expect "help" 0 \
-	"usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch|smime ACTION]" \
+	$'usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch|smime ACTION]\n  --attachment PATH  Attach a file to to/reply; repeat for multiple files.\n                     Also accepts --attachment=PATH. Listed in send review.\n                     Use - or @stdin once with --body; --yes for piped sends.' \
 	"" \
 	"$project_root/bin/post" --simple --help
 
@@ -40,6 +40,12 @@ expect "about" 0 \
 
 expect "unknown option" 2 "" "post: unknown option: --wat" \
 	"$project_root/bin/post" --wat
+
+expect "missing attachment refuses send" 2 "" \
+	"post: attachment is not a readable regular file: /nonexistent/post-attachment" \
+	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" to peter --as einstein --subject test --body test \
+	--attachment /nonexistent/post-attachment --yes
 
 smime_sandbox="$(mktemp -d "${TMPDIR:-/tmp}/post-smime-cli.XXXXXX")"
 printf '%s\n' 'root passphrase with enough entropy' > "$smime_sandbox/root-passphrase"
@@ -131,6 +137,16 @@ expect "JSON fleet status" 0 "$expected_status_args" "" \
 	"$project_root/bin/post" status --json
 
 expected_send=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\nmessage\ncompose\n--from\nunix_mail_redux@agents.home.arpa\n--to\nvalidate@agents.home.arpa\n--subject\nBound the scanner\n--save\nSent\n--send\n--BODY--\nPlease reproduce this under a cgroup ceiling.'
+attachment_send=$'--config\n/etc/unix-mail-redux/himalaya.toml\n--account\nunix_mail_redux\nmessage\ncompose\n--from\neinstein@agents.home.arpa\n--to\npeter@agents.home.arpa\n--subject\nReview\n--save\nSent\n--send\n--attach\n'"$project_root/README.md"$'\n--attach\n'"$project_root/INTENT.md"$'\n--BODY--\nPlease review.'
+attachment_review=$'From: einstein@agents.home.arpa\nTo: peter@agents.home.arpa\nSubject: Review\nAttachment: README.md\nAttachment: INTENT.md\n\nPlease review.\nSend? [y/N] '
+expect "repeatable attachments with approval" 0 "$attachment_send" "$attachment_review" \
+	with_input yes env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" to peter --as einstein --subject Review --body 'Please review.' \
+	--attachment README.md --attachment=INTENT.md
+expect "declined attachments do not send" 0 "" "${attachment_review}Not sent." \
+	with_input no env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
+	"$project_root/bin/post" to peter --as einstein --subject Review --body 'Please review.' \
+	--attachment README.md --attachment=INTENT.md
 expect "confirmed project message" 0 "$expected_send" "" \
 	env POST_HIMALAYA="$project_root/tests/fixtures/fake_himalaya" \
 	"$project_root/bin/post" to validate --as unix_mail_redux \

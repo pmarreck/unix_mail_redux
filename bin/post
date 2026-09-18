@@ -23,6 +23,9 @@ end
 
 if parsed.verb == "help" then
 	io.write("usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch|smime ACTION]\n")
+	io.write("  --attachment PATH  Attach a file to to/reply; repeat for multiple files.\n",
+		"                     Also accepts --attachment=PATH. Listed in send review.\n",
+		"                     Use - or @stdin once with --body; --yes for piped sends.\n")
 	os.exit(0)
 end
 
@@ -183,6 +186,18 @@ if (parsed.verb == "to" or parsed.verb == "reply") and not parsed.body then
 	end
 end
 
+local attachment_labels = parsed.attachments
+local attachments_ok, prepared_attachments = pcall(require("attachments").prepare, parsed.attachments, io.stdin)
+if not attachments_ok then
+	io.stderr:write("post: ", tostring(prepared_attachments), "\n")
+	os.exit(2)
+end
+if parsed.attachments then parsed.attachments = prepared_attachments.paths end
+local function finish(rc)
+	prepared_attachments.cleanup()
+	os.exit(rc)
+end
+
 local planned_ok, plan = pcall(app.plan, parsed, {
 	config = config,
 	git_root = git_root,
@@ -191,8 +206,9 @@ local planned_ok, plan = pcall(app.plan, parsed, {
 })
 if not planned_ok then
 	io.stderr:write("post: ", tostring(plan), "\n")
-	os.exit(2)
+	finish(2)
 end
+plan.attachments = attachment_labels
 
 if parsed.verb == "reply" then
 	local prepared = process.run(plan.argv, {
@@ -203,40 +219,41 @@ if parsed.verb == "reply" then
 		io.stderr:write(prepared.stderr)
 	end
 	if prepared.rc ~= 0 then
-		os.exit(prepared.rc)
+		finish(prepared.rc)
 	end
 
 	local preview_ok, preview = pcall(review.from_mime, prepared.stdout, plan.body)
 	if not preview_ok then
 		io.stderr:write("post: ", tostring(preview), "\n")
-		os.exit(2)
+		finish(2)
 	end
+	preview.attachments = attachment_labels
 
 	if parsed.confirm ~= false then
 		io.stderr:write(review.render(preview), "Send? [y/N] ")
 		if not review.confirmed(io.stdin:read("*l")) then
 			io.stderr:write("Not sent.\n")
-			os.exit(0)
+			finish(0)
 		end
 	end
 
 	local sent = process.run(plan.send_argv, { stdin = prepared.stdout })
-	os.exit(sent.rc)
+	finish(sent.rc)
 end
 
 if parsed.verb == "to" and parsed.confirm ~= false then
 	io.stderr:write(review.render(plan), "Send? [y/N] ")
 	if not review.confirmed(io.stdin:read("*l")) then
 		io.stderr:write("Not sent.\n")
-		os.exit(0)
+		finish(0)
 	end
 end
 
 local result = process.run(plan.argv, { stdin = plan.stdin })
 if result.rc ~= 0 then
-	os.exit(result.rc)
+	finish(result.rc)
 end
 if plan.after_argv then
 	result = process.run(plan.after_argv)
 end
-os.exit(result.rc)
+finish(result.rc)

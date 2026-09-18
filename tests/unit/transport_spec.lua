@@ -1,6 +1,16 @@
 local transport = require("transport")
 
 describe("Himalaya command construction", function()
+	it("passes attachments as separate literal arguments for compose and reply", function()
+		local files = {"/tmp/a b.md", "/tmp/$(touch nope).bin"}
+		for _, argv in ipairs({
+			transport.compose({executable="himalaya"}, "a", "b", "s", nil, files),
+			transport.reply_candidate({executable="himalaya"}, "box", "1", "a", nil, files),
+		}) do
+			assert.same({"--attach", files[1], "--attach", files[2]},
+				{unpack(argv, #argv-3)})
+		end
+	end)
 	local config = {
 		executable = "/run/current-system/sw/bin/himalaya",
 		config = "/home/test/.config/post/himalaya.toml",

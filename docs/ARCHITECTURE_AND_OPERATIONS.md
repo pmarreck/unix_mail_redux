@@ -71,6 +71,10 @@ post to validate --as peter \
 	--body "The candidate build passed."
 post reply 42 --as validate --body "Pinned and verified."
 
+# Repeat attachments on either new messages or replies.
+post to peter --as einstein --subject "Review documents" --body "Please review." \
+	--attachment "release plan.md" --attachment=capabilities.csv
+
 # Machine-readable status.
 post status --json
 ```
