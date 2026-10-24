@@ -54,6 +54,7 @@ function M.run(argv, options)
 			rc = 127,
 			stdout = "",
 			stderr = tostring(spawn_error),
+			spawn_error = tostring(spawn_error),
 		}
 	end
 

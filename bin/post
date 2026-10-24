@@ -179,6 +179,16 @@ local config = {
 	account = os.getenv("POST_ACCOUNT") or "unix_mail_redux",
 }
 
+local function run_transport(argv, options)
+	local result = process.run(argv, options)
+	if result.spawn_error then
+		local reason = result.spawn_error:match("^ENOENT") and "not found" or result.spawn_error
+		io.stderr:write("post: cannot run mail transport ", argv[1], ": ", reason,
+			" (check POST_HIMALAYA)\n")
+	end
+	return result
+end
+
 if (parsed.verb == "to" or parsed.verb == "reply") and not parsed.body then
 	local handle_type = require("luv").guess_handle(0)
 	if handle_type ~= "tty" then
@@ -211,11 +221,11 @@ end
 plan.attachments = attachment_labels
 
 if parsed.verb == "reply" then
-	local prepared = process.run(plan.argv, {
+	local prepared = run_transport(plan.argv, {
 		stdin = plan.stdin,
 		capture = true,
 	})
-	if prepared.stderr ~= "" then
+	if prepared.stderr ~= "" and not prepared.spawn_error then
 		io.stderr:write(prepared.stderr)
 	end
 	if prepared.rc ~= 0 then
@@ -237,7 +247,7 @@ if parsed.verb == "reply" then
 		end
 	end
 
-	local sent = process.run(plan.send_argv, { stdin = prepared.stdout })
+	local sent = run_transport(plan.send_argv, { stdin = prepared.stdout })
 	finish(sent.rc)
 end
 
@@ -249,11 +259,11 @@ if parsed.verb == "to" and parsed.confirm ~= false then
 	end
 end
 
-local result = process.run(plan.argv, { stdin = plan.stdin })
+local result = run_transport(plan.argv, { stdin = plan.stdin })
 if result.rc ~= 0 then
 	finish(result.rc)
 end
 if plan.after_argv then
-	result = process.run(plan.after_argv)
+	result = run_transport(plan.after_argv)
 end
 finish(result.rc)

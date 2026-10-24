@@ -47,6 +47,17 @@ expect "missing attachment refuses send" 2 "" \
 	"$project_root/bin/post" to peter --as einstein --subject test --body test \
 	--attachment /nonexistent/post-attachment --yes
 
+missing_himalaya="${TMPDIR:-/tmp}/post-missing-himalaya-does-not-exist"
+expect "missing mail transport explains the failed delivery" 127 "" \
+	"post: cannot run mail transport $missing_himalaya: not found (check POST_HIMALAYA)" \
+	env POST_HIMALAYA="$missing_himalaya" \
+	"$project_root/bin/post" to peter --as einstein --subject test --body test --yes
+
+expect "missing mail transport explains the failed reply" 127 "" \
+	"post: cannot run mail transport $missing_himalaya: not found (check POST_HIMALAYA)" \
+	env POST_HIMALAYA="$missing_himalaya" \
+	"$project_root/bin/post" reply 42 --as einstein --body test --yes
+
 smime_sandbox="$(mktemp -d "${TMPDIR:-/tmp}/post-smime-cli.XXXXXX")"
 printf '%s\n' 'root passphrase with enough entropy' > "$smime_sandbox/root-passphrase"
 printf '%s\n' 'phone passphrase with enough entropy' > "$smime_sandbox/phone-passphrase"

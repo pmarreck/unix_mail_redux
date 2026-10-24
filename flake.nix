@@ -59,6 +59,21 @@
 							"post 0.1.0: project-aware Unix mail for humans and agents (${platformLabels.${system}})"
 						post --simple --help | ${pkgs.gnugrep}/bin/grep -Fqx \
 							'usage: post [options] [list|read ID|reply ID|to PROJECT|status|watch|smime ACTION]'
+						mkdir minimal-path-home
+						if ${pkgs.coreutils}/bin/env -i \
+							HOME="$PWD/minimal-path-home" PATH= \
+							POST_HIMALAYA_CONFIG="$PWD/minimal-path-home/missing.toml" \
+							${postFor system}/bin/post status --json \
+							>minimal-path.out 2>minimal-path.err
+						then
+							echo 'post unexpectedly reached a configured mail account' >&2
+							exit 1
+						else
+							minimal_path_rc=$?
+						fi
+						test "$minimal_path_rc" -ne 127
+						test ! -s minimal-path.err
+						${pkgs.gnugrep}/bin/grep -Fq '"error":' minimal-path.out
 						printf '%s\n' 'packaged smoke-test root passphrase' > root-passphrase
 						post --simple smime init-ca \
 							--out root-ca \
