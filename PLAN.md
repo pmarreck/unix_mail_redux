@@ -11,7 +11,8 @@ Open work is ordered below; completed work is archived in [docs/PLAN_LOG.md](doc
 
 ## Test infrastructure
 
-- [ ] Attribute and reduce the complete `./test` path from 5.96 seconds to the five-second execution budget without weakening coverage; Lua unit/integration execution accounts for 0.335 seconds, leaving shell setup and process-heavy suites unseparated (risk: Nix/admission time must remain distinct from execution time).
+- [x] Keep the cached NixOS integration-test TLS fixture valid for long-lived binary caches and assert substantial remaining lifetime before exercising clients (risk: a short-lived certificate can make an unchanged derivation fail only after cache aging). (done 2026-10-25 17:08 EDT; commit 80da892)
+- [ ] Attribute and reduce the complete `./test` path from 5.96-7.06 seconds to the five-second execution budget without weakening coverage; Lua unit/integration execution accounts for 0.297-0.335 seconds, leaving shell setup and process-heavy suites unseparated (risk: Nix/admission time must remain distinct from execution time).
 
 ## Deployment and live gates
 
