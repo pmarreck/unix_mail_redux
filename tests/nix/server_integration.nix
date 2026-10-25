@@ -1,11 +1,13 @@
 { pkgs, module, package }:
 
 let
+	testCertificateDays = 36500;
+	testCertificateMinimumRemainingSeconds = 50 * 365 * 24 * 60 * 60;
 	testTls = pkgs.runCommand "unix-mail-redux-test-tls" {
 		nativeBuildInputs = [ pkgs.openssl ];
 	} ''
 		mkdir -p "$out"
-		openssl req -x509 -newkey rsa:2048 -nodes -days 2 \
+		openssl req -x509 -newkey rsa:2048 -nodes -days ${toString (testCertificateDays + 1)} \
 			-subj /CN=UNIX-MAIL-REDUX-Test-CA \
 			-addext basicConstraints=critical,CA:TRUE \
 			-addext keyUsage=critical,keyCertSign,cRLSign \
@@ -14,7 +16,7 @@ let
 			-subj /CN=mail.example.ts.net \
 			-addext subjectAltName=DNS:mail.example.ts.net,IP:127.0.0.1 \
 			-keyout "$out/server.key" -out "$out/server.csr"
-		openssl x509 -req -days 1 \
+		openssl x509 -req -days ${toString testCertificateDays} \
 			-in "$out/server.csr" \
 			-CA "$out/ca.crt" -CAkey "$out/ca.key" -CAcreateserial \
 			-copy_extensions copy -out "$out/server.crt"
@@ -80,6 +82,12 @@ machine.wait_for_unit("dovecot.service")
 machine.wait_for_open_port(143)
 machine.wait_for_open_port(465)
 machine.wait_for_open_port(993)
+# Cached Nix derivations must not become invalid merely because the binary
+# cache retained this test fixture. Preserve at least 50 years of headroom.
+machine.succeed(
+	"openssl x509 -checkend ${toString testCertificateMinimumRemainingSeconds} -noout "
+	"-in /var/lib/unix-mail-redux/tls/mail.example.ts.net.crt"
+)
 
 password = machine.succeed("cat /home/operator/.config/post/password").strip()
 # Swaks reparses a leading '+' password as an option, even with --password=.
