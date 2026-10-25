@@ -4,9 +4,14 @@ Open work is ordered below; completed work is archived in [docs/PLAN_LOG.md](doc
 
 ## Current CLI correctness
 
+- [x] Diagnose iOS Mail.app image-attachment retrieval through the packaged SMTP/LMTP/Maildir/IMAP path; all ten live PNGs and MIME metadata were valid, and the live retry passed after reconnecting the phone's private network; retain exact image MIME/byte coverage (risk: generic binary fixtures can pass while `image/*` metadata remains unusable). (done 2026-10-25 17:02 EDT; commit 387c83f)
 - [x] Reproduce and repair silent missing-Himalaya/spawn failures, preserve truthful nonzero delivery status, name the executable/configuration on stderr, qualify minimal-PATH packaging, and run the complete isolated suite (risk: reply preparation can duplicate a raw spawn error). (done 2026-10-24 10:10 EDT; commit 7924f55)
 - [ ] Reproduce and repair `--body -`/`@stdin` ownership semantics, including empty/read failures, attachment conflicts, MIME body integrity, and explicit help (risk: body and attachment must never both consume stdin).
 - [ ] Reproduce and repair `post read --json` stdout contamination while preserving mark-seen behavior and keeping effect notices off machine-readable stdout (risk: fixing output must not skip the Seen mutation).
+
+## Test infrastructure
+
+- [ ] Attribute and reduce the complete `./test` path from 5.96 seconds to the five-second execution budget without weakening coverage; Lua unit/integration execution accounts for 0.335 seconds, leaving shell setup and process-heavy suites unseparated (risk: Nix/admission time must remain distinct from execution time).
 
 ## Deployment and live gates
 
